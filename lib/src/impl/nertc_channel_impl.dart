@@ -14,7 +14,7 @@ class _NERtcChannelImpl extends NERtcChannel
   final _statsCallbacks = <NERtcStatsEventCallback>{};
 
   _NERtcChannelImpl(this.channelTag) {
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       _platform.addRtcChannelListener(this);
       _rtcStatsPlatform.registerStatsListener(this);
     } else {
@@ -29,7 +29,7 @@ class _NERtcChannelImpl extends NERtcChannel
 
     _platform.removeRtcChannelListener(this);
     _rtcStatsPlatform.unregisterStatsListener(this);
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       _platform.clearStatsEventCallback(channelTag);
     }
 
@@ -39,7 +39,7 @@ class _NERtcChannelImpl extends NERtcChannel
 
   @override
   Future<String> getChannelName(String channelTag) async {
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       return await _platform.getChannelName(channelTag);
     } else {
       Map<String, dynamic> convertJson = {
@@ -54,7 +54,7 @@ class _NERtcChannelImpl extends NERtcChannel
 
   @override
   Future<int> enableMediaPub(int mediaType, bool enable) async {
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       return await _platform.enableMediaPub(channelTag, mediaType, enable);
     } else {
       int reply = Invoke_(InvokeMethod.kNERtcEngineEnableMediaPub, {
@@ -70,7 +70,7 @@ class _NERtcChannelImpl extends NERtcChannel
   @override
   Future<int> enableAudioVolumeIndication(bool enable, int interval,
       {bool vad = false}) async {
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       return await _platform.enableAudioVolumeIndication(
           channelTag, enable, interval, vad);
     } else {
@@ -88,7 +88,7 @@ class _NERtcChannelImpl extends NERtcChannel
 
   @override
   Future<int> enableLocalAudio(bool enable) async {
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       return await _platform.enableLocalAudio(channelTag, enable);
     } else {
       int reply = Invoke_(InvokeMethod.kNERtcEngineEnableLocalAudio, {
@@ -104,7 +104,7 @@ class _NERtcChannelImpl extends NERtcChannel
   @override
   Future<int> enableLocalVideo(bool enable,
       {int streamType = NERtcVideoStreamType.main}) async {
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       return await _platform.enableLocalVideo(channelTag, enable, streamType);
     } else {
       int reply = Invoke_(InvokeMethod.kNERtcEngineEnableLocalVideo, {
@@ -119,7 +119,7 @@ class _NERtcChannelImpl extends NERtcChannel
 
   @override
   Future<int> getConnectionState() async {
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       return await _platform.getConnectionState(channelTag);
     } else {
       int reply = Invoke_(InvokeMethod.kNERtcEngineGetChannelConnection, {
@@ -133,7 +133,7 @@ class _NERtcChannelImpl extends NERtcChannel
   @override
   Future<int> joinChannel(String? token, String channelName, int uid,
       NERtcJoinChannelOptions? channelOptions) async {
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       return await _platform.joinChannel(
           channelTag, token, channelName, uid, channelOptions);
     } else {
@@ -156,7 +156,7 @@ class _NERtcChannelImpl extends NERtcChannel
 
   @override
   Future<int> leaveChannel() async {
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       return await _platform.leaveChannel(channelTag);
     } else {
       int reply = Invoke_(InvokeMethod.kNERtcEngineLeaveChannel, {
@@ -169,7 +169,7 @@ class _NERtcChannelImpl extends NERtcChannel
 
   @override
   Future<int> muteLocalAudioStream(bool mute) async {
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       return await _platform.muteLocalAudioStream(channelTag, mute);
     } else {
       int reply = Invoke_(InvokeMethod.kNERtcEngineMuteLocalAudio, {
@@ -185,7 +185,7 @@ class _NERtcChannelImpl extends NERtcChannel
   @override
   Future<int> muteLocalVideoStream(bool mute,
       {int streamType = NERtcVideoStreamType.main}) async {
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       return await _platform.muteLocalVideoStream(channelTag, mute, streamType);
     } else {
       int reply = Invoke_(InvokeMethod.kNERtcEngineMuteLocalVideo, {
@@ -201,7 +201,7 @@ class _NERtcChannelImpl extends NERtcChannel
   @override
   Future<int> release() async {
     dispose();
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       return await _platform.release(channelTag);
     } else {
       int reply = Invoke_(InvokeMethod.kNERtcEngineRelease, {
@@ -214,7 +214,7 @@ class _NERtcChannelImpl extends NERtcChannel
 
   @override
   Future<int> setChannelProfile(int channelProfile) async {
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       return await _platform.setChannelProfile(channelTag, channelProfile);
     } else {
       int reply = Invoke_(InvokeMethod.kNERtcEngineSetChannelProfile, {
@@ -228,7 +228,7 @@ class _NERtcChannelImpl extends NERtcChannel
 
   @override
   Future<int> setClientRole(int role) async {
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       return await _platform.setClientRole(channelTag, role);
     } else {
       int reply = Invoke_(InvokeMethod.kNERtcEngineSetClientRole,
@@ -250,7 +250,7 @@ class _NERtcChannelImpl extends NERtcChannel
   @override
   Future<int> setLocalVideoConfig(NERtcVideoConfig videoConfig,
       {int streamType = NERtcVideoStreamType.main}) async {
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       return await _platform.setLocalVideoConfig(
           channelTag, videoConfig, streamType);
     } else {
@@ -267,7 +267,7 @@ class _NERtcChannelImpl extends NERtcChannel
   @override
   void setStatsEventCallback(NERtcStatsEventCallback callback) {
     _statsCallbacks.add(callback);
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       _platform.setStatsEventCallback(channelTag);
     } else {
       RegisterNERtcSubChannelStatsSink(channelTag, this);
@@ -285,7 +285,7 @@ class _NERtcChannelImpl extends NERtcChannel
   @override
   void removeStatsEventCallback(NERtcStatsEventCallback callback) {
     _statsCallbacks.remove(callback);
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       _platform.clearStatsEventCallback(channelTag);
     } else {
       RegisterMediaStatsSink(null);
@@ -302,7 +302,7 @@ class _NERtcChannelImpl extends NERtcChannel
 
   @override
   Future<int> subscribeRemoteAudio(int uid, bool subscribe) async {
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       return await _platform.subscribeRemoteAudio(channelTag, uid, subscribe);
     } else {
       int reply = Invoke_(InvokeMethod.kNERtcEngineSubscribeRemoteAudioStream, {
@@ -317,7 +317,7 @@ class _NERtcChannelImpl extends NERtcChannel
 
   @override
   Future<int> subscribeRemoteSubStreamAudio(int uid, bool subscribe) async {
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       return await _platform.subscribeRemoteSubAudio(
           channelTag, uid, subscribe);
     } else {
@@ -335,7 +335,7 @@ class _NERtcChannelImpl extends NERtcChannel
   @override
   Future<int> subscribeRemoteVideoStream(
       int uid, int streamType, bool subscribe) async {
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       return await _platform.subscribeRemoteVideoStream(
           channelTag, uid, streamType, subscribe);
     } else {
@@ -352,7 +352,7 @@ class _NERtcChannelImpl extends NERtcChannel
 
   @override
   Future<int> subscribeRemoteSubVideoStream(int uid, bool subscribe) async {
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       return await _platform.subscribeRemoteSubVideoStream(
           channelTag, uid, subscribe);
     } else {
@@ -369,7 +369,7 @@ class _NERtcChannelImpl extends NERtcChannel
 
   @override
   Future<int> switchCamera() async {
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       return await _platform.switchCamera(channelTag);
     } else {
       return 30004;
@@ -378,7 +378,7 @@ class _NERtcChannelImpl extends NERtcChannel
 
   @override
   Future<int> takeLocalSnapshot(int streamType, String path) async {
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       return await _platform.takeLocalSnapshot(channelTag, streamType, path);
     } else {
       int reply = Invoke_(InvokeMethod.kNERtcEngineTakeLocalSnapshot, {
@@ -393,7 +393,7 @@ class _NERtcChannelImpl extends NERtcChannel
 
   @override
   Future<int> takeRemoteSnapshot(int uid, int streamType, String path) async {
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       return await _platform.takeRemoteSnapshot(
           channelTag, uid, streamType, path);
     } else {
@@ -900,7 +900,7 @@ class _NERtcChannelImpl extends NERtcChannel
 
   @override
   Future<int> addLiveStreamTask(NERtcLiveStreamTaskInfo taskInfo) {
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       return _platform.addLiveStreamTask(channelTag, taskInfo);
     } else {
       int reply = Invoke_(InvokeMethod.kNERtcEngineAddLiveStreamTaskInfo, {
@@ -914,7 +914,7 @@ class _NERtcChannelImpl extends NERtcChannel
 
   @override
   Future<int> adjustUserPlaybackSignalVolume(int uid, int volume) {
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       return _platform.adjustUserPlaybackSignalVolume(channelTag, uid, volume);
     } else {
       int reply = Invoke_(InvokeMethod.kNERtcAdjustUserPlaybackSignalVolume, {
@@ -929,7 +929,7 @@ class _NERtcChannelImpl extends NERtcChannel
 
   @override
   Future<int> enableEncryption(bool enable, NERtcEncryptionConfig config) {
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       return _platform.enableEncryption(channelTag, enable, config);
     } else {
       int reply = Invoke_(InvokeMethod.kNERtcEngineEnableEncryption, {
@@ -953,7 +953,7 @@ class _NERtcChannelImpl extends NERtcChannel
 
   @override
   Future<int> enableLocalSubStreamAudio(bool enable) {
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       return _platform.enableLocalSubStreamAudio(channelTag, enable);
     } else {
       int reply = Invoke_(InvokeMethod.kNERtcEngineEnableLocalAudio, {
@@ -968,7 +968,7 @@ class _NERtcChannelImpl extends NERtcChannel
 
   @override
   Future<int> enableSpatializer(bool enable, bool applyToTeam) {
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       return _platform.enableSpatializer(channelTag, enable, applyToTeam);
     } else {
       int reply = Invoke_(InvokeMethod.kNERtcEngineEnableSpatializer, {
@@ -983,7 +983,7 @@ class _NERtcChannelImpl extends NERtcChannel
 
   @override
   Future<int> enableSpatializerRoomEffects(bool enable) {
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       return _platform.enableSpatializerRoomEffects(channelTag, enable);
     } else {
       int reply = Invoke_(InvokeMethod.kNERtcEngineEnableSpatializerRoomEffects,
@@ -994,7 +994,7 @@ class _NERtcChannelImpl extends NERtcChannel
 
   @override
   Future<int> getFeatureSupportedType(NERtcFeatureType featureType) {
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       return _platform.getFeatureSupportedType(channelTag, featureType.index);
     } else {
       int reply = Invoke_(InvokeMethod.kNERtcEngineGetFeatureSupportedType, {
@@ -1008,7 +1008,7 @@ class _NERtcChannelImpl extends NERtcChannel
 
   @override
   Future<int> initSpatializer() {
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       return _platform.initSpatializer(channelTag);
     } else {
       int reply = Invoke_(InvokeMethod.kNERtcEngineInitSpatializer, {
@@ -1022,7 +1022,7 @@ class _NERtcChannelImpl extends NERtcChannel
   @override
   Future<int> pushExternalVideoFrame(NERtcVideoFrame frame,
       {int streamType = NERtcVideoStreamType.main}) async {
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       return _platform.pushExternalVideoFrame(channelTag, streamType, frame);
     } else {
       Map<String, dynamic> params = {
@@ -1046,7 +1046,7 @@ class _NERtcChannelImpl extends NERtcChannel
 
   @override
   Future<int> removeLiveStreamTask(String taskId) {
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       return _platform.removeLiveStreamTask(channelTag, taskId);
     } else {
       int reply = Invoke_(InvokeMethod.kNERtcEngineRemoveLiveStreamTaskInfo,
@@ -1058,7 +1058,7 @@ class _NERtcChannelImpl extends NERtcChannel
   @override
   Future<int> reportCustomEvent(
       String eventName, String? customIdentify, Map<String?, Object?>? param) {
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       return _platform.reportCustomEvent(
           channelTag, eventName, customIdentify, param);
     } else {
@@ -1090,7 +1090,7 @@ class _NERtcChannelImpl extends NERtcChannel
   @override
   Future<int> sendSEIMsg(String seiMsg,
       {int streamType = NERtcVideoStreamType.main}) {
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       return _platform.sendSEIMsg(channelTag, seiMsg, streamType);
     } else {
       int reply = Invoke_(InvokeMethod.kNERtcEngineSendSEIMsg, {
@@ -1106,7 +1106,7 @@ class _NERtcChannelImpl extends NERtcChannel
   @override
   Future<int> setAudioRecvRange(int audibleDistance, int conversationalDistance,
       NERtcDistanceRollOffModel rollOffModel) {
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       return _platform.setAudioRecvRange(channelTag, audibleDistance,
           conversationalDistance, rollOffModel.index);
     } else {
@@ -1123,7 +1123,7 @@ class _NERtcChannelImpl extends NERtcChannel
 
   @override
   Future<int> setAudioSubscribeOnlyBy(List<int>? uidArray) {
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       return _platform.setAudioSubscribeOnlyBy(channelTag, uidArray);
     } else {
       Map<String, dynamic> params = {
@@ -1142,7 +1142,7 @@ class _NERtcChannelImpl extends NERtcChannel
   @override
   Future<int> setCameraCaptureConfig(NERtcCameraCaptureConfig captureConfig,
       {int streamType = NERtcVideoStreamType.main}) {
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       return _platform.setCameraCaptureConfig(
           channelTag, captureConfig, streamType);
     } else {
@@ -1159,7 +1159,7 @@ class _NERtcChannelImpl extends NERtcChannel
   @override
   Future<int> setExternalVideoSource(bool enable,
       {int streamType = NERtcVideoStreamType.main}) {
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       return _platform.setExternalVideoSource(channelTag, streamType, enable);
     } else {
       int reply = Invoke_(InvokeMethod.kNERtcEngineSetExternalVideoSource, {
@@ -1174,7 +1174,7 @@ class _NERtcChannelImpl extends NERtcChannel
 
   @override
   Future<int> setLocalMediaPriority(int priority, bool isPreemptive) {
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       return _platform.setLocalMediaPriority(
           channelTag, priority, isPreemptive);
     } else {
@@ -1190,7 +1190,7 @@ class _NERtcChannelImpl extends NERtcChannel
 
   @override
   Future<int> setLocalPublishFallbackOption(int option) {
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       return _platform.setLocalPublishFallbackOption(channelTag, option);
     } else {
       int reply = Invoke_(
@@ -1202,7 +1202,7 @@ class _NERtcChannelImpl extends NERtcChannel
 
   @override
   Future<int> setRangeAudioMode(NERtcRangeAudioMode audioMode) {
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       return _platform.setRangeAudioMode(channelTag, audioMode.index);
     } else {
       int reply = Invoke_(InvokeMethod.kNERtcEngineSetRangeAudioMode, {
@@ -1216,7 +1216,7 @@ class _NERtcChannelImpl extends NERtcChannel
 
   @override
   Future<int> setRangeAudioTeamID(int teamID) {
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       return _platform.setRangeAudioTeamID(channelTag, teamID);
     } else {
       int reply = Invoke_(InvokeMethod.kNERtcEngineSetRangeAudioTeamID,
@@ -1228,7 +1228,7 @@ class _NERtcChannelImpl extends NERtcChannel
   @override
   Future<int> setRemoteHighPriorityAudioStream(bool enabled, int uid,
       {int streamType = NERtcAudioStreamType.kNERtcAudioStreamTypeMain}) {
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       return _platform.setRemoteHighPriorityAudioStream(
           channelTag, enabled, uid, streamType);
     } else {
@@ -1246,7 +1246,7 @@ class _NERtcChannelImpl extends NERtcChannel
 
   @override
   Future<int> setRemoteSubscribeFallbackOption(int option) {
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       return _platform.setRemoteSubscribeFallbackOption(channelTag, option);
     } else {
       int reply = Invoke_(
@@ -1258,7 +1258,7 @@ class _NERtcChannelImpl extends NERtcChannel
 
   @override
   Future<int> setSpatializerRenderMode(NERtcSpatializerRenderMode renderMode) {
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       return _platform.setSpatializerRenderMode(channelTag, renderMode.index);
     } else {
       int reply = Invoke_(InvokeMethod.kNERtcEngineSetSpatializerRenderMode, {
@@ -1273,7 +1273,7 @@ class _NERtcChannelImpl extends NERtcChannel
   @override
   Future<int> setSpatializerRoomProperty(
       NERtcSpatializerRoomProperty property) {
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       return _platform.setSpatializerRoomProperty(channelTag, property);
     } else {
       int reply = Invoke_(InvokeMethod.kNERtcEngineSetSpatializerRoomProperty, {
@@ -1287,7 +1287,7 @@ class _NERtcChannelImpl extends NERtcChannel
 
   @override
   Future<int> setSubscribeAudioAllowlist(List<int> uidList) {
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       return _platform.setSubscribeAudioAllowlist(channelTag, uidList);
     } else {
       int reply = Invoke_(InvokeMethod.kNERtcEngineSetSubscribeAudioAllowlist,
@@ -1298,7 +1298,7 @@ class _NERtcChannelImpl extends NERtcChannel
 
   @override
   Future<int> setSubscribeAudioBlocklist(List<int> uidList, int streamType) {
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       return _platform.setSubscribeAudioBlocklist(
           channelTag, uidList, streamType);
     } else {
@@ -1314,7 +1314,7 @@ class _NERtcChannelImpl extends NERtcChannel
 
   @override
   Future<int> setVideoStreamLayerCount(int layerCount) {
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       return _platform.setVideoStreamLayerCount(channelTag, layerCount);
     } else {
       int reply = Invoke_(InvokeMethod.kNERtcEngineSetVideoStreamLayerCount, {
@@ -1329,7 +1329,7 @@ class _NERtcChannelImpl extends NERtcChannel
   @override
   Future<int> startChannelMediaRelay(
       NERtcChannelMediaRelayConfiguration config) {
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       return _platform.startChannelMediaRelay(channelTag, config);
     } else {
       int reply = Invoke_(InvokeMethod.kNERtcEngineStartChannelMediaRelay, {
@@ -1343,7 +1343,7 @@ class _NERtcChannelImpl extends NERtcChannel
 
   @override
   Future<int> startScreenCapture(NERtcScreenConfig config) {
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       return _platform.startScreenCapture(channelTag, config);
     } else {
       return Future.value(30004);
@@ -1352,7 +1352,7 @@ class _NERtcChannelImpl extends NERtcChannel
 
   @override
   Future<int> stopChannelMediaRelay() {
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       return _platform.stopChannelMediaRelay(channelTag);
     } else {
       int reply = Invoke_(InvokeMethod.kNERtcEngineStopChannelMediaRelay, {
@@ -1365,7 +1365,7 @@ class _NERtcChannelImpl extends NERtcChannel
 
   @override
   Future<int> stopScreenCapture() {
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       return _platform.stopScreenCapture(channelTag);
     } else {
       int reply = Invoke_(ScreenCaptureMethod.kNERtcEngineStopScreenCapture,
@@ -1376,7 +1376,7 @@ class _NERtcChannelImpl extends NERtcChannel
 
   @override
   Future<int> subscribeAllRemoteAudio(bool subscribe) {
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       return _platform.subscribeAllRemoteAudio(channelTag, subscribe);
     } else {
       int reply = Invoke_(
@@ -1400,7 +1400,7 @@ class _NERtcChannelImpl extends NERtcChannel
 
   @override
   Future<int> switchCameraWithPosition(int position) {
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       return _platform.switchCameraWithPosition(channelTag, position);
     } else {
       return Future.value(30004);
@@ -1410,7 +1410,7 @@ class _NERtcChannelImpl extends NERtcChannel
   @override
   Future<int> updateChannelMediaRelay(
       NERtcChannelMediaRelayConfiguration config) {
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       return _platform.updateChannelMediaRelay(channelTag, config);
     } else {
       int reply = Invoke_(InvokeMethod.kNERtcEngineUpdateChannelMediaRelay, {
@@ -1424,7 +1424,7 @@ class _NERtcChannelImpl extends NERtcChannel
 
   @override
   Future<int> updateLiveStreamTask(NERtcLiveStreamTaskInfo taskInfo) {
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       return _platform.updateLiveStreamTask(channelTag, taskInfo);
     } else {
       int reply = Invoke_(InvokeMethod.kNERtcEngineUpdateLiveStreamTaskInfo, {
@@ -1438,7 +1438,7 @@ class _NERtcChannelImpl extends NERtcChannel
 
   @override
   Future<int> updateSelfPosition(NERtcPositionInfo positionInfo) {
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       return _platform.updateSelfPosition(channelTag, positionInfo);
     } else {
       int reply = Invoke_(InvokeMethod.kNERtcEngineUpdateSelfPosition, {
@@ -1453,7 +1453,7 @@ class _NERtcChannelImpl extends NERtcChannel
   @override
   IScreenCaptureList? getScreenCaptureSources(
       NERtcSize thumbSize, NERtcSize iconSize, bool includeScreen) {
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       print("Android and iOS not support.");
       return null;
     }
@@ -1465,7 +1465,7 @@ class _NERtcChannelImpl extends NERtcChannel
 
   @override
   int pauseScreenCapture() {
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       print("Android and iOS not support.");
       return 30004;
     }
@@ -1502,7 +1502,7 @@ class _NERtcChannelImpl extends NERtcChannel
   @override
   int setScreenCaptureSource(NERtcScreenCaptureSourceInfo source,
       NERtcRectangle regionRect, NERtcScreenCaptureParameters captureParams) {
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       print("Android and iOS not support.");
       return 30004;
     }
@@ -1518,7 +1518,7 @@ class _NERtcChannelImpl extends NERtcChannel
   @override
   int startScreenCaptureByDisplayId(int displayId, NERtcRectangle regionRect,
       NERtcScreenCaptureParameters captureParams) {
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       print("Android and iOS not support.");
       return 30004;
     }
@@ -1535,7 +1535,7 @@ class _NERtcChannelImpl extends NERtcChannel
   @override
   int startScreenCaptureByScreenRect(NERtcRectangle screenRect,
       NERtcRectangle regionRect, NERtcScreenCaptureParameters captureParams) {
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       print("Android and iOS not support.");
       return 30004;
     }
@@ -1552,7 +1552,7 @@ class _NERtcChannelImpl extends NERtcChannel
   @override
   int startScreenCaptureByWindowId(int windowId, NERtcRectangle regionRect,
       NERtcScreenCaptureParameters captureParams) {
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       print("Android and iOS not support.");
       return 30004;
     }
@@ -1569,7 +1569,7 @@ class _NERtcChannelImpl extends NERtcChannel
   @override
   int updateScreenCaptureParameters(
       NERtcScreenCaptureParameters captureParams) {
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       print("Android and iOS not support.");
       return 30004;
     }
@@ -1583,7 +1583,7 @@ class _NERtcChannelImpl extends NERtcChannel
 
   @override
   int updateScreenCaptureRegion(NERtcRectangle regionRect) {
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       print("Android and iOS not support.");
       return 30004;
     }

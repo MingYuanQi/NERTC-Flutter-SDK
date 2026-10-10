@@ -29,7 +29,7 @@ class _NERtcAudioMixingMgrImpl extends NERtcAudioMixingManager
 
   @override
   Future<int> getAudioMixingCurrentPosition() async {
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       int reply = await wrapper('getAudioMixingCurrentPosition',
           _platform.getAudioMixingCurrentPosition());
       return reply;
@@ -41,7 +41,7 @@ class _NERtcAudioMixingMgrImpl extends NERtcAudioMixingManager
 
   @override
   Future<int> getAudioMixingDuration() async {
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       int reply = await wrapper(
           'getAudioMixingDuration', _platform.getAudioMixingDuration());
       return reply;
@@ -52,7 +52,7 @@ class _NERtcAudioMixingMgrImpl extends NERtcAudioMixingManager
 
   @override
   Future<int> getAudioMixingPitch() async {
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       int reply =
           await wrapper('getAudioMixingPitch', _platform.getAudioMixingPitch());
       return reply;
@@ -63,7 +63,7 @@ class _NERtcAudioMixingMgrImpl extends NERtcAudioMixingManager
 
   @override
   Future<int> getAudioMixingPlaybackVolume() async {
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       int reply = await wrapper('getAudioMixingPlaybackVolume',
           _platform.getAudioMixingPlaybackVolume());
       return reply;
@@ -75,7 +75,7 @@ class _NERtcAudioMixingMgrImpl extends NERtcAudioMixingManager
 
   @override
   Future<int> getAudioMixingSendVolume() async {
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       int reply = await wrapper(
           'getAudioMixingSendVolume', _platform.getAudioMixingSendVolume());
       return reply;
@@ -86,7 +86,7 @@ class _NERtcAudioMixingMgrImpl extends NERtcAudioMixingManager
 
   @override
   Future<int> pauseAudioMixing() async {
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       int reply =
           await wrapper('pauseAudioMixing', _platform.pauseAudioMixing());
       return reply;
@@ -101,7 +101,7 @@ class _NERtcAudioMixingMgrImpl extends NERtcAudioMixingManager
 
   @override
   Future<int> resumeAudioMixing() async {
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       int reply =
           await wrapper('resumeAudioMixing', _platform.resumeAudioMixing());
       return reply;
@@ -117,7 +117,7 @@ class _NERtcAudioMixingMgrImpl extends NERtcAudioMixingManager
   @override
   Future<int> setAudioMixingPitch(int pitch) async {
     apiLogger.i('setAudioMixingPitch#arg{pitch:$pitch}');
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       int reply = await wrapper(
           'setAudioMixingPitch', _platform.setAudioMixingPitch(pitch));
       return reply;
@@ -130,7 +130,7 @@ class _NERtcAudioMixingMgrImpl extends NERtcAudioMixingManager
   @override
   Future<int> setAudioMixingPlaybackVolume(int volume) async {
     apiLogger.i('setAudioMixingPlaybackVolume#arg{volume:$volume}');
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       int reply = await wrapper('setAudioMixingPlaybackVolume',
           _platform.setAudioMixingPlaybackVolume(volume));
       return reply;
@@ -143,7 +143,7 @@ class _NERtcAudioMixingMgrImpl extends NERtcAudioMixingManager
   @override
   Future<int> setAudioMixingPosition(int position) async {
     apiLogger.i('setAudioMixingPosition#arg{position:$position}');
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       int reply = await wrapper(
           'setAudioMixingPosition', _platform.setAudioMixingPosition(position));
       return reply;
@@ -156,7 +156,7 @@ class _NERtcAudioMixingMgrImpl extends NERtcAudioMixingManager
   @override
   Future<int> setAudioMixingSendVolume(int volume) async {
     apiLogger.i('setAudioMixingSendVolume#arg{volume:$volume}');
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       int reply = await wrapper('setAudioMixingSendVolume',
           _platform.setAudioMixingSendVolume(volume));
       return reply;
@@ -173,7 +173,7 @@ class _NERtcAudioMixingMgrImpl extends NERtcAudioMixingManager
   @override
   Future<int> startAudioMixing(NERtcAudioMixingOptions options) async {
     apiLogger.i('startAudioMixing#arg{options:$options}');
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       int reply = await wrapper(
           'startAudioMixing', _platform.startAudioMixing(options));
       return reply;
@@ -189,7 +189,7 @@ class _NERtcAudioMixingMgrImpl extends NERtcAudioMixingManager
 
   @override
   Future<int> stopAudioMixing() async {
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       int reply = await wrapper('stopAudioMixing', _platform.stopAudioMixing());
       return reply;
     } else {

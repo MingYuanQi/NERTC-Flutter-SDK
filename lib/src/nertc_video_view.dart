@@ -258,6 +258,13 @@ class NERtcVideoViewState extends State<NERtcVideoView>
   }
 
   Widget _buildVideoView(int textureId, double width, double height) {
+    if (Platform.isOhos) {
+      return OhosView(
+        viewType: 'nertc_core_ohos/video_view',
+        creationParams: <String, Object>{'rendererId': textureId},
+        creationParamsCodec: const StandardMessageCodec(),
+      );
+    }
     return FittedBox(
       fit: widget.fitType == NERtcVideoViewFitType.contain
           ? BoxFit.contain

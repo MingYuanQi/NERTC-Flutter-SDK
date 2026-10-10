@@ -19,13 +19,20 @@ dependencies:
   cupertino_icons: ^1.0.3
   permission_handler: ^12.0.1
   http: ^0.13.3
-  shared_preferences: ^2.0.6
+  shared_preferences:
+    git:
+      url: "https://gitcode.com/openharmony-tpc/flutter_packages.git"
+      path: "packages/shared_preferences/shared_preferences"
 #  package_info: ^2.0.2
   package_info_plus: ^8.3.0
   file_picker: ^10.2.0
 #  fluttertoast: ^8.0.9
   flutter_toastr: ^1.0.3
-  path_provider: ^2.1.5
+  path_provider:
+    git:
+      url: "https://gitcode.com/openharmony-tpc/flutter_packages.git"
+      path: "packages/path_provider/path_provider"
+      ref: "br_path_provider-v2.1.5_ohos"
   archive: ^3.3.7
   dio: ^5.2.0+1
 

@@ -35,28 +35,6 @@ abstract class NERtcEngine {
   /// 移除统计信息观测回调
   void removeStatsEventCallback(NERtcStatsEventCallback callback);
 
-  /// 注册原始音频帧回调
-  void setAudioFrameEventCallback(NERtcAudioFrameEventCallback callback);
-
-  /// 移除原始音频帧回调
-  void removeAudioFrameEventCallback(NERtcAudioFrameEventCallback callback);
-
-  /// 设置本地录音音频帧参数
-  Future<int> setRecordingAudioFrameParameters(
-      NERtcAudioFrameRequestFormat format);
-
-  /// 设置播放音频帧参数
-  Future<int> setPlaybackAudioFrameParameters(
-      NERtcAudioFrameRequestFormat format);
-
-  /// 设置播放前混音音频帧参数
-  Future<int> setPlaybackBeforeMixingAudioFrameParameters(
-      NERtcAudioFrameRequestFormat format);
-
-  /// 设置混音音频帧参数
-  Future<int> setMixedAudioFrameParameters(
-      NERtcAudioFrameRequestFormat format);
-
   /// 设置房间推流任务事件回调
   void setLiveTaskEventCallback(NERtcLiveTaskCallback callback);
 

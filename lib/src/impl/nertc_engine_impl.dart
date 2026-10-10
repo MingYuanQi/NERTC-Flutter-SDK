@@ -8,7 +8,6 @@ class _NERtcEngineImpl extends NERtcEngine
     with _SDKLoggerMixin, LoggingApi
     implements
         NERtcChannelEventSink,
-        NERtcAudioFrameEventSink,
         NERtcDeviceEventSink,
         NERtcAudioEffectEventSink,
         NERtcAudioMixingEventSink,
@@ -34,7 +33,6 @@ class _NERtcEngineImpl extends NERtcEngine
   final _eventCallbacks = <NERtcChannelEventCallback>{};
   final _statsCallbacks = <NERtcStatsEventCallback>{};
   final _liveTaskCallback = <NERtcLiveTaskCallback>{};
-  final _audioFrameCallbacks = <NERtcAudioFrameEventCallback>{};
   final _platform = NERtcEnginePlatform.instance;
 
   final Map<String, NERtcChannel> _channelMaps = {};
@@ -53,7 +51,7 @@ class _NERtcEngineImpl extends NERtcEngine
     await _LogService().init(appKey, options?.logLevel, options?.logDir);
     apiLogger
         .i('createEngine#arg: appKey:$appKey, options:${options.toString()}');
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       int reply =
           await wrapper('createEngine', _platform.create(appKey, options));
       if (reply == 0) {
@@ -82,56 +80,12 @@ class _NERtcEngineImpl extends NERtcEngine
     }
   }
 
-  @override
-  Future<int> setRecordingAudioFrameParameters(
-      NERtcAudioFrameRequestFormat format) async {
-    if (Platform.isAndroid || Platform.isIOS) {
-      return await wrapper(
-          'setRecordingAudioFrameParameters',
-          _platform.setRecordingAudioFrameParameters(format));
-    }
-    return 0;
-  }
-
-  @override
-  Future<int> setPlaybackAudioFrameParameters(
-      NERtcAudioFrameRequestFormat format) async {
-    if (Platform.isAndroid || Platform.isIOS) {
-      return await wrapper(
-          'setPlaybackAudioFrameParameters',
-          _platform.setPlaybackAudioFrameParameters(format));
-    }
-    return 0;
-  }
-
-  @override
-  Future<int> setPlaybackBeforeMixingAudioFrameParameters(
-      NERtcAudioFrameRequestFormat format) async {
-    if (Platform.isAndroid || Platform.isIOS) {
-      return await wrapper(
-          'setPlaybackBeforeMixingAudioFrameParameters',
-          _platform.setPlaybackBeforeMixingAudioFrameParameters(format));
-    }
-    return 0;
-  }
-
-  @override
-  Future<int> setMixedAudioFrameParameters(
-      NERtcAudioFrameRequestFormat format) async {
-    if (Platform.isAndroid || Platform.isIOS) {
-      return await wrapper(
-          'setMixedAudioFrameParameters',
-          _platform.setMixedAudioFrameParameters(format));
-    }
-    return 0;
-  }
-
   Future<NERtcChannel> createChannel(String channelName) async {
     if (_channelMaps.containsKey(channelName)) {
       return _channelMaps[channelName]!;
     }
 
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       await _platform.createChannel(channelName);
     } else {
       final reply = await Invoke_(
@@ -145,7 +99,7 @@ class _NERtcEngineImpl extends NERtcEngine
   }
 
   Future<NERtcVersion> version() async {
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       return await wrapper('version', _platform.version());
     } else {
       final version = InvokeMethod1_(jsonEncode({
@@ -157,7 +111,7 @@ class _NERtcEngineImpl extends NERtcEngine
   }
 
   Future<List<String?>?> checkPermission() async {
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       return await wrapper('checkPermission', _platform.checkPermission());
     } else {
       return <String?>[];
@@ -167,7 +121,7 @@ class _NERtcEngineImpl extends NERtcEngine
   Future<int> setParameters(NERtcParameters params) async {
     Map<String, Object> parameters = Map<String, Object>();
     parameters = params._parameters;
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       int reply = await wrapper(
           'setParameters', _platform.setParameters(parameters), parameters);
       return reply;
@@ -181,17 +135,15 @@ class _NERtcEngineImpl extends NERtcEngine
 
   void setEventCallback(NERtcChannelEventCallback callback) {
     _eventCallbacks.add(callback);
-    // Listener registration is handled by create()/dispose().
   }
 
   void removeEventCallback(NERtcChannelEventCallback callback) {
     _eventCallbacks.remove(callback);
-    // Listener lifecycle is managed by create()/dispose().
   }
 
   void setStatsEventCallback(NERtcStatsEventCallback callback) {
     _statsCallbacks.add(callback);
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       _platform.setStatsEventCallback();
     } else {
       RegisterMediaStatsSink(this);
@@ -202,26 +154,6 @@ class _NERtcEngineImpl extends NERtcEngine
       InvokeMethod_(jsonEncode(convertJson));
     }
     apiLogger.i('setStatsEventCallback');
-  }
-
-  @override
-  void setAudioFrameEventCallback(NERtcAudioFrameEventCallback callback) {
-    _audioFrameCallbacks.add(callback);
-    if (Platform.isAndroid || Platform.isIOS) {
-      _platform.addRtcAudioFrameListener(this);
-      _platform.setAudioFrameObserver(true);
-    }
-  }
-
-  @override
-  void removeAudioFrameEventCallback(NERtcAudioFrameEventCallback callback) {
-    _audioFrameCallbacks.remove(callback);
-    if (Platform.isAndroid || Platform.isIOS) {
-      _platform.removeRtcAudioFrameListener(this);
-      if (_audioFrameCallbacks.isEmpty) {
-        _platform.setAudioFrameObserver(false);
-      }
-    }
   }
 
   void removeStatsEventCallback(NERtcStatsEventCallback callback) {
@@ -249,12 +181,10 @@ class _NERtcEngineImpl extends NERtcEngine
     _eventCallbacks.clear();
     _statsCallbacks.clear();
     _liveTaskCallback.clear();
-    _audioFrameCallbacks.clear();
 
     _platform.removeRtcChannelListener(this);
-    _platform.removeRtcAudioFrameListener(this);
     _rtcStatsPlatform.unregisterStatsListener(this);
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       _platform.clearStatsEventCallback();
     } else {
       ClearChannelEventSinkMaps();
@@ -1029,7 +959,7 @@ class _NERtcEngineImpl extends NERtcEngine
     _initialized = false;
     dispose();
     _channelMaps.clear();
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       return wrapper('release', _platform.release());
     } else {
       Map<String, dynamic> wrapperJson = {
@@ -1045,7 +975,7 @@ class _NERtcEngineImpl extends NERtcEngine
       [NERtcJoinChannelOptions? channelOptions]) async {
     apiLogger.i(
         'joinChannel#arg{token:$token,:channelName:$channelName,uid:$uid,channelOptions:${channelOptions.toString()}}');
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       int reply = await wrapper('joinChannel',
           _platform.joinChannel(token, channelName, uid, channelOptions));
       return reply;
@@ -1064,7 +994,7 @@ class _NERtcEngineImpl extends NERtcEngine
 
   @override
   Future<int> leaveChannel() async {
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       int reply = await wrapper('leaveChannel', _platform.leaveChannel());
       return reply;
     } else {
@@ -1087,7 +1017,7 @@ class _NERtcEngineImpl extends NERtcEngine
   @override
   Future<int> enableLocalAudio(bool enable) async {
     apiLogger.i('enableLocalAudio#arg{enable:$enable}');
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       int reply =
           await wrapper('enableLocalAudio', _platform.enableLocalAudio(enable));
       return reply;
@@ -1105,7 +1035,7 @@ class _NERtcEngineImpl extends NERtcEngine
   @override
   Future<int> subscribeRemoteAudio(int uid, bool subscribe) async {
     apiLogger.i('subscribeRemoteAudio#arg{uid:$uid,subscribe:$subscribe}');
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       int reply = await wrapper('subscribeRemoteAudio',
           _platform.subscribeRemoteAudio(uid, subscribe));
       return reply;
@@ -1123,7 +1053,7 @@ class _NERtcEngineImpl extends NERtcEngine
   @override
   Future<int> subscribeAllRemoteAudio(bool subscribe) async {
     apiLogger.i('subscribeAllRemoteAudio#arg{subscribe:$subscribe}');
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       int reply = await wrapper('subscribeAllRemoteAudio',
           _platform.subscribeAllRemoteAudio(subscribe));
       return reply;
@@ -1141,7 +1071,7 @@ class _NERtcEngineImpl extends NERtcEngine
   Future<int> enableLocalVideo(bool enable,
       {int streamType = NERtcVideoStreamType.main}) async {
     apiLogger.i('enableLocalVideo#arg{enable:$enable,streamType:$streamType}');
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       int reply = await wrapper(
           'enableLocalVideo', _platform.enableLocalVideo(enable, streamType));
       return reply;
@@ -1159,7 +1089,7 @@ class _NERtcEngineImpl extends NERtcEngine
   @override
   Future<int> muteLocalAudioStream(bool mute) async {
     apiLogger.i('muteLocalAudioStream#arg{mute:$mute}');
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       int reply = await wrapper(
           'muteLocalAudioStream', _platform.muteLocalAudioStream(mute));
       return reply;
@@ -1178,7 +1108,7 @@ class _NERtcEngineImpl extends NERtcEngine
   Future<int> muteLocalVideoStream(bool mute,
       {int streamType = NERtcVideoStreamType.main}) async {
     apiLogger.i('muteLocalVideoStream#arg{mute:$mute,streamType:$streamType}');
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       int reply = await wrapper('muteLocalVideoStream',
           _platform.muteLocalVideoStream(mute, streamType));
       return reply;
@@ -1196,7 +1126,7 @@ class _NERtcEngineImpl extends NERtcEngine
   @override
   Future<int> muteLocalSubStreamAudio(bool muted) async {
     apiLogger.i('muteLocalSubStreamAudio#arg{muted:$muted}');
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       int reply = await wrapper(
           'muteLocalSubStreamAudio', _platform.muteLocalSubStreamAudio(muted));
       return reply;
@@ -1214,7 +1144,7 @@ class _NERtcEngineImpl extends NERtcEngine
   @override
   Future<int> enableLocalSubStreamAudio(bool enable) async {
     apiLogger.i('enableLocalSubStreamAudio#arg{enable:$enable}');
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       int reply = await wrapper('enableLocalSubStreamAudio',
           _platform.enableLocalSubStreamAudio(enable));
       return reply;
@@ -1233,7 +1163,7 @@ class _NERtcEngineImpl extends NERtcEngine
   Future<int> setAudioProfile(
       NERtcAudioProfile profile, NERtcAudioScenario scenario) async {
     apiLogger.i('setAudioProfile#arg{profile:$profile,scenario:$scenario}');
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       int reply = await wrapper(
           'setAudioProfile', _platform.setAudioProfile(profile, scenario));
       return reply;
@@ -1253,7 +1183,7 @@ class _NERtcEngineImpl extends NERtcEngine
       {int streamType = NERtcVideoStreamType.main}) async {
     apiLogger.i(
         'setCameraCaptureConfig#arg{captureConfig:${captureConfig.toString()},streamType:$streamType}');
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       int reply = await wrapper('setCameraCaptureConfig',
           _platform.setCameraCaptureConfig(captureConfig, streamType));
       return reply;
@@ -1273,7 +1203,7 @@ class _NERtcEngineImpl extends NERtcEngine
       {int streamType = NERtcVideoStreamType.main}) async {
     apiLogger.i(
         'setLocalVideoConfig#arg{videoConfig:${videoConfig.toString()},streamType:$streamType}');
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       int reply = await wrapper('setLocalVideoConfig',
           _platform.setLocalVideoConfig(videoConfig, streamType));
       return reply;
@@ -1306,7 +1236,7 @@ class _NERtcEngineImpl extends NERtcEngine
   Future<int> startVideoPreview(
       {int streamType = NERtcVideoStreamType.main}) async {
     apiLogger.i('startVideoPreview#arg{streamType:$streamType}');
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       int reply = await wrapper(
           'startVideoPreview', _platform.startVideoPreview(streamType));
       return reply;
@@ -1324,7 +1254,7 @@ class _NERtcEngineImpl extends NERtcEngine
   Future<int> stopVideoPreview(
       {int streamType = NERtcVideoStreamType.main}) async {
     apiLogger.i('stopVideoPreview#arg{streamType:$streamType}');
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       int reply = await wrapper(
           'stopVideoPreview', _platform.stopVideoPreview(streamType));
       return reply;
@@ -1341,7 +1271,7 @@ class _NERtcEngineImpl extends NERtcEngine
   @override
   Future<int> startScreenCapture(NERtcScreenConfig config) async {
     apiLogger.i('startScreenCapture#arg{config:$config}');
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       int reply = await wrapper(
           'startScreenCapture', _platform.startScreenCapture(config));
       return reply;
@@ -1352,7 +1282,7 @@ class _NERtcEngineImpl extends NERtcEngine
 
   @override
   Future<int> stopScreenCapture() async {
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       int reply =
           await wrapper('stopScreenCapture', _platform.stopScreenCapture());
       return reply;
@@ -1374,7 +1304,7 @@ class _NERtcEngineImpl extends NERtcEngine
   Future<int> enableLoopbackRecording(bool enable,
       {String deviceName = ""}) async {
     apiLogger.i('enableLoopbackRecording#arg{enable:$enable}');
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       int reply = await wrapper(
           'enableLoopbackRecording', _platform.enableLoopbackRecording(enable));
       return reply;
@@ -1388,7 +1318,7 @@ class _NERtcEngineImpl extends NERtcEngine
   Future<int> subscribeRemoteSubStreamVideo(int uid, bool subscribe) async {
     apiLogger
         .i('subscribeRemoteSubStreamVideo#arg{uid:$uid,subscribe:$subscribe}');
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       int reply = await wrapper('subscribeRemoteSubStreamVideo',
           _platform.subscribeRemoteSubStreamVideo(uid, subscribe));
       return reply;
@@ -1408,7 +1338,7 @@ class _NERtcEngineImpl extends NERtcEngine
       int uid, int streamType, bool subscribe) async {
     apiLogger.i(
         'subscribeRemoteVideoStream#arg{uid:$uid,streamType:$streamType,subscribe:$subscribe}');
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       int reply = await wrapper('subscribeRemoteVideoStream',
           _platform.subscribeRemoteVideoStream(uid, streamType, subscribe));
       return reply;
@@ -1429,7 +1359,7 @@ class _NERtcEngineImpl extends NERtcEngine
       {bool vad = false}) async {
     apiLogger.i(
         'enableAudioVolumeIndication#arg{enable:$enable,interval:$interval,vad:$vad}');
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       int reply = await wrapper('enableAudioVolumeIndication',
           _platform.enableAudioVolumeIndication(enable, interval, vad));
       return reply;
@@ -1447,7 +1377,7 @@ class _NERtcEngineImpl extends NERtcEngine
 
   @override
   Future<int> startAudioDump() async {
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       int reply = await wrapper('startAudioDump', _platform.startAudioDump());
       return reply;
     } else {
@@ -1462,7 +1392,7 @@ class _NERtcEngineImpl extends NERtcEngine
 
   @override
   Future<int> stopAudioDump() async {
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       int reply = await wrapper('stopAudioDump', _platform.stopAudioDump());
       return reply;
     } else {
@@ -1477,7 +1407,7 @@ class _NERtcEngineImpl extends NERtcEngine
   @override
   Future<int> enableDualStreamMode(bool enable) async {
     apiLogger.i('enableDualStreamMode#arg{enable:$enable}');
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       int reply = await wrapper(
           'enableDualStreamMode', _platform.enableDualStreamMode(enable));
       return reply;
@@ -1494,7 +1424,7 @@ class _NERtcEngineImpl extends NERtcEngine
   @override
   Future<int> setChannelProfile(int channelProfile) async {
     apiLogger.i('setChannelProfile#arg{channelProfile:$channelProfile}');
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       int reply = await wrapper(
           'setChannelProfile', _platform.setChannelProfile(channelProfile));
       return reply;
@@ -1511,7 +1441,7 @@ class _NERtcEngineImpl extends NERtcEngine
   @override
   Future<int> addLiveStreamTask(NERtcLiveStreamTaskInfo taskInfo) async {
     apiLogger.i('addLiveStreamTask#arg{taskInfo:${taskInfo.toString()}}');
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       int reply = await wrapper(
           'addLiveStreamTask', _platform.addLiveStreamTask(taskInfo));
       return reply;
@@ -1528,7 +1458,7 @@ class _NERtcEngineImpl extends NERtcEngine
   @override
   Future<int> updateLiveStreamTask(NERtcLiveStreamTaskInfo taskInfo) async {
     apiLogger.i('updateLiveStreamTask#arg{taskInfo:${taskInfo.toString()}}');
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       int reply = await wrapper(
           'updateLiveStreamTask', _platform.updateLiveStreamTask(taskInfo));
       return reply;
@@ -1545,7 +1475,7 @@ class _NERtcEngineImpl extends NERtcEngine
   @override
   Future<int> removeLiveStreamTask(String taskId) async {
     apiLogger.i('removeLiveStreamTask#arg{taskId:$taskId}');
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       int reply = await wrapper(
           'removeLiveStreamTask', _platform.removeLiveStreamTask(taskId));
       return reply;
@@ -1562,7 +1492,7 @@ class _NERtcEngineImpl extends NERtcEngine
   @override
   Future<int> adjustPlaybackSignalVolume(int volume) async {
     apiLogger.i('adjustPlaybackSignalVolume#arg{volume:$volume}');
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       int reply = await wrapper('adjustPlaybackSignalVolume',
           _platform.adjustPlaybackSignalVolume(volume));
       return reply;
@@ -1579,7 +1509,7 @@ class _NERtcEngineImpl extends NERtcEngine
   @override
   Future<int> adjustRecordingSignalVolume(int volume) async {
     apiLogger.i('adjustRecordingSignalVolume#arg{volume:$volume}');
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       int reply = await wrapper('adjustRecordingSignalVolume',
           _platform.adjustRecordingSignalVolume(volume));
       return reply;
@@ -1596,7 +1526,7 @@ class _NERtcEngineImpl extends NERtcEngine
   @override
   Future<int> adjustLoopBackRecordingSignalVolume(int volume) async {
     apiLogger.i('adjustLoopBackRecordingSignalVolume#arg{volume:$volume}');
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       int reply = await wrapper('adjustLoopBackRecordingSignalVolume',
           _platform.adjustLoopBackRecordingSignalVolume(volume));
       return reply;
@@ -1612,7 +1542,7 @@ class _NERtcEngineImpl extends NERtcEngine
 
   @override
   Future<int> getConnectionState() async {
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       int reply =
           await wrapper('getConnectionState', _platform.getConnectionState());
       return reply;
@@ -1629,7 +1559,7 @@ class _NERtcEngineImpl extends NERtcEngine
   Future<int> sendSEIMsg(String seiMsg,
       {int streamType = NERtcVideoStreamType.main}) async {
     apiLogger.i('sendSEIMsg#arg{seiMsg:$seiMsg,streamType:$streamType}');
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       int reply =
           await wrapper('sendSEIMsg', _platform.sendSEIMsg(seiMsg, streamType));
       return reply;
@@ -1647,7 +1577,7 @@ class _NERtcEngineImpl extends NERtcEngine
   @override
   Future<int> setClientRole(int role) async {
     apiLogger.i('setClientRole#arg{role:$role}');
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       int reply = await wrapper('setClientRole', _platform.setClientRole(role));
       return reply;
     } else {
@@ -1662,7 +1592,7 @@ class _NERtcEngineImpl extends NERtcEngine
 
   @override
   Future<int> uploadSdkInfo() async {
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       int reply = await wrapper('uploadSdkInfo', _platform.uploadSdkInfo());
       return reply;
     } else {
@@ -1677,7 +1607,7 @@ class _NERtcEngineImpl extends NERtcEngine
   @override
   Future<int> setAudioEffectPreset(int preset) async {
     apiLogger.i('setAudioEffectPreset#arg{preset:$preset}');
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       int reply = await wrapper(
           'setAudioEffectPreset', _platform.setAudioEffectPreset(preset));
       return reply;
@@ -1691,7 +1621,7 @@ class _NERtcEngineImpl extends NERtcEngine
   Future<int> setLocalVoiceEqualization(int bandFrequency, int bandGain) async {
     apiLogger.i(
         'setLocalVoiceEqualization#arg{bandFrequency:$bandFrequency,bandGain:$bandGain}');
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       int reply = await wrapper('setLocalVoiceEqualization',
           _platform.setLocalVoiceEqualization(bandFrequency, bandGain));
       return reply;
@@ -1705,7 +1635,7 @@ class _NERtcEngineImpl extends NERtcEngine
   @override
   Future<int> setLocalVoicePitch(double pitch) async {
     apiLogger.i('setLocalVoicePitch#arg{pitch:$pitch}');
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       int reply = await wrapper(
           'setLocalVoicePitch', _platform.setLocalVoicePitch(pitch));
       return reply;
@@ -1718,7 +1648,7 @@ class _NERtcEngineImpl extends NERtcEngine
   @override
   Future<int> setVoiceBeautifierPreset(int preset) async {
     apiLogger.i('setVoiceBeautifierPreset#arg{preset:$preset}');
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       int reply = await wrapper('setVoiceBeautifierPreset',
           _platform.setVoiceBeautifierPreset(preset));
       return reply;
@@ -1732,7 +1662,7 @@ class _NERtcEngineImpl extends NERtcEngine
   @override
   Future<int> setLocalVoiceReverbParam(NERtcReverbParam param) async {
     apiLogger.i('setLocalVoiceReverbParam#arg{param:${param.toString()}}');
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       int reply = await wrapper('setLocalVoiceReverbParam',
           _platform.setLocalVoiceReverbParam(param));
       return reply;
@@ -1748,7 +1678,7 @@ class _NERtcEngineImpl extends NERtcEngine
       String filePath, int sampleRate, int quality) async {
     apiLogger.i(
         'startAudioRecording#arg{filePath:$filePath,sampleRate:$sampleRate,quality:$quality}');
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       int reply = await wrapper('startAudioRecording',
           _platform.startAudioRecording(filePath, sampleRate, quality));
       return reply;
@@ -1769,7 +1699,7 @@ class _NERtcEngineImpl extends NERtcEngine
       NERtcAudioRecordingConfiguration config) async {
     apiLogger
         .i('startAudioRecordingWithConfig#arg{config:${config.toString()}}');
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       int reply = await wrapper('startAudioRecordingWithConfig',
           _platform.startAudioRecordingWithConfig(config));
       return reply;
@@ -1785,7 +1715,7 @@ class _NERtcEngineImpl extends NERtcEngine
 
   @override
   Future<int> stopAudioRecording() async {
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       int reply =
           await wrapper('stopAudioRecording', _platform.stopAudioRecording());
       return reply;
@@ -1803,7 +1733,7 @@ class _NERtcEngineImpl extends NERtcEngine
       {NERtcJoinChannelOptions? channelOptions}) async {
     apiLogger.i(
         'switchChannel#arg{token:$token,channelName:$channelName,channelOptions:${channelOptions.toString()}}');
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       int reply = await wrapper(
           'switchChannel',
           _platform.switchChannel(token, channelName,
@@ -1825,7 +1755,7 @@ class _NERtcEngineImpl extends NERtcEngine
   Future<int> setLocalMediaPriority(int priority, bool isPreemptive) async {
     apiLogger.i(
         'setLocalMediaPriority#arg{priority:$priority,isPreemptive:$isPreemptive}');
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       int reply = await wrapper('setLocalMediaPriority',
           _platform.setLocalMediaPriority(priority, isPreemptive));
       return reply;
@@ -1844,7 +1774,7 @@ class _NERtcEngineImpl extends NERtcEngine
   Future<int> startChannelMediaRelay(
       NERtcChannelMediaRelayConfiguration config) async {
     apiLogger.i('startChannelMediaRelay#arg{config:${config.toString()}}');
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       int reply = await wrapper(
           'startChannelMediaRelay', _platform.startChannelMediaRelay(config));
       return reply;
@@ -1860,7 +1790,7 @@ class _NERtcEngineImpl extends NERtcEngine
 
   @override
   Future<int> stopChannelMediaRelay() async {
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       int reply = await wrapper(
           'stopChannelMediaRelay', _platform.stopChannelMediaRelay());
       return reply;
@@ -1877,7 +1807,7 @@ class _NERtcEngineImpl extends NERtcEngine
   Future<int> updateChannelMediaRelay(
       NERtcChannelMediaRelayConfiguration config) async {
     apiLogger.i('updateChannelMediaRelay#arg{config:${config.toString()}}');
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       int reply = await wrapper(
           'updateChannelMediaRelay', _platform.updateChannelMediaRelay(config));
       return reply;
@@ -1894,7 +1824,7 @@ class _NERtcEngineImpl extends NERtcEngine
   @override
   Future<int> adjustUserPlaybackSignalVolume(int uid, int volume) async {
     apiLogger.i('adjustUserPlaybackSignalVolume#arg{uid:$uid,volume:$volume}');
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       int reply = await wrapper('adjustUserPlaybackSignalVolume',
           _platform.adjustUserPlaybackSignalVolume(uid, volume));
       return reply;
@@ -1909,7 +1839,7 @@ class _NERtcEngineImpl extends NERtcEngine
       Map<String?, Object?>? param) async {
     apiLogger.i(
         'reportCustomEvent#arg{eventName:$eventName,customIdentify:$customIdentify,param:$param}');
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       int reply = await wrapper('reportCustomEvent',
           _platform.reportCustomEvent(eventName, customIdentify, param));
       return reply;
@@ -1929,7 +1859,7 @@ class _NERtcEngineImpl extends NERtcEngine
       bool enable, NERtcEncryptionConfig config) async {
     apiLogger
         .i('enableEncryption#arg{enable:$enable,config:${config.toString()}}');
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       int reply = await wrapper(
           'enableEncryption', _platform.enableEncryption(enable, config));
       return reply;
@@ -1942,7 +1872,7 @@ class _NERtcEngineImpl extends NERtcEngine
   @override
   Future<int> enableSuperResolution(bool enable) async {
     apiLogger.i('enableSuperResolution#arg{enable:$enable}');
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       int reply = await wrapper(
           'enableSuperResolution', _platform.enableSuperResolution(enable));
       return reply;
@@ -1965,7 +1895,7 @@ class _NERtcEngineImpl extends NERtcEngine
   @override
   Future<int> setLocalPublishFallbackOption(int option) async {
     apiLogger.i('setLocalPublishFallbackOption#arg{option:$option}');
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       int reply = await wrapper('setLocalPublishFallbackOption',
           _platform.setLocalPublishFallbackOption(option));
       return reply;
@@ -1982,7 +1912,7 @@ class _NERtcEngineImpl extends NERtcEngine
   @override
   Future<int> setRemoteSubscribeFallbackOption(int option) async {
     apiLogger.i('setRemoteSubscribeFallbackOption#arg{option:$option}');
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       int reply = await wrapper('setRemoteSubscribeFallbackOption',
           _platform.setRemoteSubscribeFallbackOption(option));
       return reply;
@@ -2007,7 +1937,7 @@ class _NERtcEngineImpl extends NERtcEngine
   @override
   Future<int> startLastmileProbeTest(LastmileProbeConfig config) async {
     apiLogger.i('startLastmileProbeTest#arg{config:$config}');
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       int reply = await wrapper(
           'startLastmileProbeTest', _platform.startLastmileProbeTest(config));
       return reply;
@@ -2023,7 +1953,7 @@ class _NERtcEngineImpl extends NERtcEngine
 
   @override
   Future<int> stopLastmileProbeTest() async {
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       int reply = await wrapper(
           'stopLastmileProbeTest', _platform.stopLastmileProbeTest());
       return reply;
@@ -2051,7 +1981,7 @@ class _NERtcEngineImpl extends NERtcEngine
       {bool force = false}) async {
     apiLogger.i(
         'enableVirtualBackground#arg{enabled:$enabled,backgroundSource:$backgroundSource}');
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       int reply = await wrapper('enableVirtualBackground',
           _platform.enableVirtualBackground(enabled, backgroundSource));
       return reply;
@@ -2070,7 +2000,7 @@ class _NERtcEngineImpl extends NERtcEngine
   @override
   Future<int> setCloudProxy(int proxyType) async {
     apiLogger.i('setCloudProxy#arg{proxyType:$proxyType}');
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       int reply =
           await wrapper('setCloudProxy', _platform.setCloudProxy(proxyType));
       return reply;
@@ -2089,7 +2019,7 @@ class _NERtcEngineImpl extends NERtcEngine
       {int streamType = NERtcAudioStreamType.kNERtcAudioStreamTypeMain}) async {
     apiLogger.i(
         'setRemoteHighPriorityAudioStream#arg{enabled:$enabled,uid:$uid,streamType:$streamType}');
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       int reply = await wrapper('setRemoteHighPriorityAudioStream',
           _platform.setRemoteHighPriorityAudioStream(enabled, uid, streamType));
       return reply;
@@ -2107,7 +2037,7 @@ class _NERtcEngineImpl extends NERtcEngine
 
   @override
   Future<int> startBeauty({String filePath = ""}) async {
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       int reply = await wrapper('startBeauty', _platform.startBeauty());
       return reply;
     } else {
@@ -2118,7 +2048,7 @@ class _NERtcEngineImpl extends NERtcEngine
 
   @override
   Future<void> stopBeauty() async {
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       await wrapper('stopBeauty', _platform.stopBeauty());
       return;
     } else {
@@ -2129,7 +2059,7 @@ class _NERtcEngineImpl extends NERtcEngine
   @override
   Future<int> enableBeauty(bool enabled) async {
     apiLogger.i('enableBeauty#arg{enabled:$enabled}');
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       int reply =
           await wrapper('enableBeauty', _platform.enableBeauty(enabled));
       return reply;
@@ -2142,7 +2072,7 @@ class _NERtcEngineImpl extends NERtcEngine
   @override
   Future<int> setBeautyEffect(double level, int beautyType) async {
     apiLogger.i('setBeautyEffect#arg{level:$level,beautyType:$beautyType}');
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       int reply = await wrapper(
           'setBeautyEffect', _platform.setBeautyEffect(level, beautyType));
       return reply;
@@ -2155,7 +2085,7 @@ class _NERtcEngineImpl extends NERtcEngine
   @override
   Future<int> addBeautyFilter(String path, {String name = ''}) async {
     apiLogger.i('addBeautyFilter#arg{path:$path,name:$name}');
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       int reply = await wrapper(
           'addBeautyFilter', _platform.addBeautyFilter(path, name));
       return reply;
@@ -2167,7 +2097,7 @@ class _NERtcEngineImpl extends NERtcEngine
 
   @override
   Future<void> removeBeautyFilter() async {
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       await wrapper('removeBeautyFilter', _platform.removeBeautyFilter());
       return;
     } else {
@@ -2178,7 +2108,7 @@ class _NERtcEngineImpl extends NERtcEngine
   @override
   Future<int> setBeautyFilterLevel(double level) async {
     apiLogger.i('setBeautyFilterLevel#arg{level:$level}');
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       int reply = await wrapper(
           'setBeautyFilterLevel', _platform.setBeautyFilterLevel(level));
       return reply;
@@ -2192,7 +2122,7 @@ class _NERtcEngineImpl extends NERtcEngine
   Future<int> setLocalVideoWatermarkConfigs(
       int type, NERtcVideoWatermarkConfig? config) async {
     apiLogger.i('setLocalVideoWatermarkConfigs#arg{type:$type,config:$config}');
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       int reply = await wrapper('setLocalVideoWatermarkConfigs',
           _platform.setLocalVideoWatermarkConfigs(type, config));
       return reply;
@@ -2205,7 +2135,7 @@ class _NERtcEngineImpl extends NERtcEngine
   @override
   Future<int> startAudioDumpWithType(int dumpType) async {
     apiLogger.i('startAudioDumpWithType#arg{dumpType:$dumpType}');
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       int reply = await wrapper(
           'startAudioDumpWithType', _platform.startAudioDumpWithType(dumpType));
       return reply;
@@ -2221,7 +2151,7 @@ class _NERtcEngineImpl extends NERtcEngine
 
   @override
   Future<int> getNtpTimeOffset() async {
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       int reply =
           await wrapper('getNtpTimeOffset', _platform.getNtpTimeOffset());
       return reply;
@@ -2237,7 +2167,7 @@ class _NERtcEngineImpl extends NERtcEngine
   @override
   Future<int> setStreamAlignmentProperty(bool enable) async {
     apiLogger.i('setStreamAlignmentProperty#arg{enable:$enable}');
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       int reply = await wrapper('setStreamAlignmentProperty',
           _platform.setStreamAlignmentProperty(enable));
       return reply;
@@ -2369,7 +2299,7 @@ class _NERtcEngineImpl extends NERtcEngine
   @override
   Future<int> enableMediaPub(int mediaType, bool enable) async {
     apiLogger.i('enableMediaPub#arg{enable:$enable,mediaType:$mediaType}');
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       int reply = await wrapper(
           'enableMediaPub', _platform.enableMediaPub(mediaType, enable));
       return reply;
@@ -2397,7 +2327,7 @@ class _NERtcEngineImpl extends NERtcEngine
   @override
   Future<int> setAudioSubscribeOnlyBy(List<int>? uidArray) async {
     apiLogger.i('setAudioSubscribeOnlyBy#arg{uidArray:${uidArray?.join(',')}}');
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       int reply = await wrapper('setAudioSubscribeOnlyBy',
           _platform.setAudioSubscribeOnlyBy(uidArray));
       return reply;
@@ -2413,7 +2343,7 @@ class _NERtcEngineImpl extends NERtcEngine
 
   @override
   Future<int> subscribeRemoteSubStreamAudio(int uid, bool subscribe) async {
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       apiLogger.i(
           'subscribeRemoteSubStreamAudio#arg{uid:$uid,subscribe:$subscribe}');
       int reply = await wrapper('subscribeRemoteSubStreamAudio',
@@ -2441,7 +2371,7 @@ class _NERtcEngineImpl extends NERtcEngine
   @override
   Future<int> takeLocalSnapshot(int streamType, String path) async {
     apiLogger.i('takeLocalSnapshot#arg{streamType:$streamType,path:$path}');
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       int reply = await wrapper(
           'takeLocalSnapshot', _platform.takeLocalSnapshot(streamType, path));
       return reply;
@@ -2460,7 +2390,7 @@ class _NERtcEngineImpl extends NERtcEngine
   Future<int> takeRemoteSnapshot(int uid, int streamType, String path) async {
     apiLogger.i(
         'takeRemoteSnapshot#arg{uid:$uid,streamType:$streamType,path:$path}');
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       int reply = await wrapper('takeRemoteSnapshot',
           _platform.takeRemoteSnapshot(uid, streamType, path));
       return reply;
@@ -2512,65 +2442,6 @@ class _NERtcEngineImpl extends NERtcEngine
   }
 
   @override
-  void onRecordFrame(NERtcAudioFrame frame) {
-    commonLogger.i('onRecordFrame');
-    for (var callback in _audioFrameCallbacks.copy()) {
-      callback.onRecordFrame(frame);
-    }
-  }
-
-  @override
-  void onRecordSubStreamAudioFrame(NERtcAudioFrame frame) {
-    commonLogger.i('onRecordSubStreamAudioFrame');
-    for (var callback in _audioFrameCallbacks.copy()) {
-      callback.onRecordSubStreamAudioFrame(frame);
-    }
-  }
-
-  @override
-  void onPlaybackFrame(NERtcAudioFrame frame) {
-    commonLogger.i('onPlaybackFrame');
-    for (var callback in _audioFrameCallbacks.copy()) {
-      callback.onPlaybackFrame(frame);
-    }
-  }
-
-  @override
-  void onPlaybackAudioFrameBeforeMixingWithUserID(
-      int uid, NERtcAudioFrame frame) {
-    commonLogger.i('onPlaybackAudioFrameBeforeMixingWithUserID: uid:$uid');
-    for (var callback in _audioFrameCallbacks.copy()) {
-      callback.onPlaybackAudioFrameBeforeMixingWithUserID(uid, frame);
-    }
-  }
-
-  @override
-  void onPlaybackSubStreamAudioFrameBeforeMixingWithUserID(
-      int uid, NERtcAudioFrame frame) {
-    commonLogger.i('onPlaybackSubStreamAudioFrameBeforeMixingWithUserID: uid:$uid');
-    for (var callback in _audioFrameCallbacks.copy()) {
-      callback.onPlaybackSubStreamAudioFrameBeforeMixingWithUserID(uid, frame);
-    }
-  }
-
-  @override
-  void onPlaybackAudioFrameBeforeMixingForPlayStreaming(
-      String streamId, NERtcAudioFrame frame) {
-    commonLogger.i('onPlaybackAudioFrameBeforeMixingForPlayStreaming: streamId:$streamId');
-    for (var callback in _audioFrameCallbacks.copy()) {
-      callback.onPlaybackAudioFrameBeforeMixingForPlayStreaming(streamId, frame);
-    }
-  }
-
-  @override
-  void onMixedAudioFrame(NERtcAudioFrame frame) {
-    commonLogger.i('onMixedAudioFrame');
-    for (var callback in _audioFrameCallbacks.copy()) {
-      callback.onMixedAudioFrame(frame);
-    }
-  }
-
-  @override
   Future<int> enableVideoCorrection(bool enable) async {
     apiLogger.i('enableVideoCorrection#arg{enable:$enable}');
     int reply = await wrapper(
@@ -2582,7 +2453,7 @@ class _NERtcEngineImpl extends NERtcEngine
       {int streamType = NERtcVideoStreamType.main}) async {
     apiLogger.i(
         'pushExternalVideoFrame#arg{streamType:$streamType,frame:${frame.toString()}}');
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       int reply = await wrapper('pushExternalVideoFrame',
           _platform.pushExternalVideoFrame(streamType, frame));
       return reply;
@@ -2610,7 +2481,7 @@ class _NERtcEngineImpl extends NERtcEngine
       {int streamType = NERtcVideoStreamType.main}) async {
     apiLogger
         .i('setExternalVideoSource#arg{streamType:$streamType,enable:$enable}');
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       int reply = await wrapper('setExternalVideoSource',
           _platform.setExternalVideoSource(streamType, enable));
       return reply;
@@ -2624,7 +2495,7 @@ class _NERtcEngineImpl extends NERtcEngine
   @override
   Future<int> setVideoDump(NERtcVideoDumpType dumpType) async {
     apiLogger.i('setVideoDump#arg{dumpType:$dumpType}');
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       int reply =
           await wrapper('setVideoDump', _platform.setVideoDump(dumpType.index));
       return reply;
@@ -2638,7 +2509,7 @@ class _NERtcEngineImpl extends NERtcEngine
   @override
   Future<String> getParameter(String key, String extraInfo) async {
     apiLogger.i('getParameter#arg{key:$key}');
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       String reply =
           await wrapper('getParameter', _platform.getParameter(key, extraInfo));
       return reply;
@@ -2655,7 +2526,7 @@ class _NERtcEngineImpl extends NERtcEngine
   @override
   Future<int> setVideoStreamLayerCount(int layerCount) async {
     apiLogger.i('setVideoStreamLayerCount#arg{layerCount:$layerCount}');
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       int reply = await wrapper('setVideoStreamLayerCount',
           _platform.setVideoStreamLayerCount(layerCount));
       return reply;
@@ -2669,7 +2540,7 @@ class _NERtcEngineImpl extends NERtcEngine
   @override
   Future<int> enableLocalData(bool enable) async {
     apiLogger.i('enableLocalData#arg{enable:$enable}');
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       int reply =
           await wrapper('enableLocalData', _platform.enableLocalData(enable));
       return reply;
@@ -2683,7 +2554,7 @@ class _NERtcEngineImpl extends NERtcEngine
   @override
   Future<int> subscribeRemoteData(int uid, bool subscribe) async {
     apiLogger.i('subscribeRemoteData#arg{uid:$uid,subscribe:$subscribe}');
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       int reply = await wrapper(
           'subscribeRemoteData', _platform.subscribeRemoteData(uid, subscribe));
       return reply;
@@ -2697,7 +2568,7 @@ class _NERtcEngineImpl extends NERtcEngine
   @override
   Future<int> getFeatureSupportedType(NERtcFeatureType featureType) async {
     apiLogger.i('getFeatureSupportedType#arg{featureType:$featureType.index}');
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       int reply = await wrapper('getFeatureSupportedType',
           _platform.getFeatureSupportedType(featureType.index));
       return reply;
@@ -2711,7 +2582,7 @@ class _NERtcEngineImpl extends NERtcEngine
   @override
   Future<bool> isFeatureSupported(NERtcFeatureType featureType) async {
     apiLogger.i('isFeatureSupported#arg{featureType:${featureType.index}');
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       bool reply = await wrapper('isFeatureSupported',
           _platform.isFeatureSupported(featureType.index));
       return reply;
@@ -2726,7 +2597,7 @@ class _NERtcEngineImpl extends NERtcEngine
   Future<int> setSubscribeAudioBlocklist(
       List<int> uidList, int streamType) async {
     apiLogger.i('setSubscribeAudioBlocklist#arg{uidList:$uidList}');
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       int reply = await wrapper('setSubscribeAudioBlocklist',
           _platform.setSubscribeAudioBlocklist(uidList, streamType));
       return reply;
@@ -2740,7 +2611,7 @@ class _NERtcEngineImpl extends NERtcEngine
   @override
   Future<int> setSubscribeAudioAllowlist(List<int> uidList) async {
     apiLogger.i('setSubscribeAudioAllowlist#arg{uidList:$uidList}');
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       int reply = await wrapper('setSubscribeAudioAllowlist',
           _platform.setSubscribeAudioAllowlist(uidList));
       return reply;
@@ -2754,7 +2625,7 @@ class _NERtcEngineImpl extends NERtcEngine
   @override
   Future<int> getNetworkType() async {
     apiLogger.i('getNetworkType#arg{}');
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       int reply = await wrapper('getNetworkType', _platform.getNetworkType());
       return reply;
     } else {
@@ -2766,7 +2637,7 @@ class _NERtcEngineImpl extends NERtcEngine
   @override
   Future<int> stopPushStreaming() async {
     apiLogger.i('stopPushStreaming#arg{}');
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       int reply =
           await wrapper('stopPushStreaming', _platform.stopPushStreaming());
       return reply;
@@ -2779,7 +2650,7 @@ class _NERtcEngineImpl extends NERtcEngine
   @override
   Future<int> stopPlayStreaming(String streamId) async {
     apiLogger.i('stopPlayStreaming#arg{}');
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       int reply = await wrapper(
           'stopPlayStreaming', _platform.stopPlayStreaming(streamId));
       return reply;
@@ -2793,7 +2664,7 @@ class _NERtcEngineImpl extends NERtcEngine
   @override
   Future<int> pausePlayStreaming(String streamId) async {
     apiLogger.i('pausePlayStreaming#arg{}');
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       int reply = await wrapper(
           'pausePlayStreaming', _platform.pausePlayStreaming(streamId));
       return reply;
@@ -2807,7 +2678,7 @@ class _NERtcEngineImpl extends NERtcEngine
   @override
   Future<int> resumePlayStreaming(String streamId) async {
     apiLogger.i('resumePlayStreaming#arg{}');
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       int reply = await wrapper(
           'resumePlayStreaming', _platform.resumePlayStreaming(streamId));
       return reply;
@@ -2821,7 +2692,7 @@ class _NERtcEngineImpl extends NERtcEngine
   @override
   Future<int> muteVideoForPlayStreaming(String streamId, bool mute) async {
     apiLogger.i('muteVideoForPlayStreaming#arg{mute:$mute}');
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       int reply = await wrapper('muteVideoForPlayStreaming',
           _platform.muteVideoForPlayStreaming(streamId, mute));
       return reply;
@@ -2835,7 +2706,7 @@ class _NERtcEngineImpl extends NERtcEngine
   @override
   Future<int> muteAudioForPlayStreaming(String streamId, bool mute) async {
     apiLogger.i('muteAudioForPlayStreaming#arg{mute:$mute}');
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       int reply = await wrapper('muteAudioForPlayStreaming',
           _platform.muteAudioForPlayStreaming(streamId, mute));
       return reply;
@@ -2849,7 +2720,7 @@ class _NERtcEngineImpl extends NERtcEngine
   @override
   Future<int> stopASRCaption() async {
     apiLogger.i('stopASRCaption#arg{}');
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       int reply = await wrapper('stopASRCaption', _platform.stopASRCaption());
       return reply;
     } else {
@@ -2861,7 +2732,7 @@ class _NERtcEngineImpl extends NERtcEngine
   @override
   Future<int> aiManualInterrupt(int dstUid) async {
     apiLogger.i('aiManualInterrupt#arg{}');
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       int reply = await wrapper(
           'aiManualInterrupt', _platform.aiManualInterrupt(dstUid));
       return reply;
@@ -2875,7 +2746,7 @@ class _NERtcEngineImpl extends NERtcEngine
   @override
   Future<int> setAINSMode(NERtcAudioAINSMode mode) async {
     apiLogger.i('AINSMode#arg{mode:$mode}');
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       int reply = await wrapper('AINSMode', _platform.AINSMode(mode.index));
       return reply;
     } else {
@@ -2888,7 +2759,7 @@ class _NERtcEngineImpl extends NERtcEngine
   @override
   Future<int> setAudioScenario(int scenario) async {
     apiLogger.i('setAudioScenario#arg{scenario:$scenario}');
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       int reply = await wrapper(
           'setAudioScenario', _platform.setAudioScenario(scenario));
       return reply;
@@ -2904,7 +2775,7 @@ class _NERtcEngineImpl extends NERtcEngine
       bool enable, int sampleRate, int channels) async {
     apiLogger.i(
         'setExternalAudioSource#arg{enable:$enable,sampleRate:$sampleRate,channels:$channels}');
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       int reply = await wrapper('setExternalAudioSource',
           _platform.setExternalAudioSource(enable, sampleRate, channels));
       return reply;
@@ -2920,7 +2791,7 @@ class _NERtcEngineImpl extends NERtcEngine
       bool enable, int sampleRate, int channels) async {
     apiLogger.i(
         'setExternalSubStreamAudioSource#arg{enable:$enable,sampleRate:$sampleRate,channels:$channels}');
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       int reply = await wrapper(
           'setExternalSubStreamAudioSource',
           _platform.setExternalSubStreamAudioSource(
@@ -2939,7 +2810,7 @@ class _NERtcEngineImpl extends NERtcEngine
       NERtcDistanceRollOffModel rollOffModel) async {
     apiLogger.i(
         'setAudioRecvRange#arg{audibleDistance:$audibleDistance,conversationalDistance:$conversationalDistance,rollOffModel:${rollOffModel.index}');
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       int reply = await wrapper(
           'setAudioRecvRange',
           _platform.setAudioRecvRange(
@@ -2958,7 +2829,7 @@ class _NERtcEngineImpl extends NERtcEngine
   @override
   Future<int> setRangeAudioMode(NERtcRangeAudioMode audioMode) async {
     apiLogger.i('setRangeAudioMode#arg{audioMode:${audioMode.index}');
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       int reply = await wrapper(
           'setRangeAudioMode', _platform.setRangeAudioMode(audioMode.index));
       return reply;
@@ -2972,7 +2843,7 @@ class _NERtcEngineImpl extends NERtcEngine
   @override
   Future<int> setRangeAudioTeamID(int teamID) async {
     apiLogger.i('setRangeAudioTeamID#arg{teamID:${teamID}');
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       int reply = await wrapper(
           'setRangeAudioTeamID', _platform.setRangeAudioTeamID(teamID));
       return reply;
@@ -2987,7 +2858,7 @@ class _NERtcEngineImpl extends NERtcEngine
   Future<int> updateSelfPosition(NERtcPositionInfo positionInfo) async {
     final info = positionInfo.toJson();
     apiLogger.i('updateSelfPosition#arg{positionInfo:${info}');
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       int reply = await wrapper(
           'updateSelfPosition', _platform.updateSelfPosition(positionInfo));
       return reply;
@@ -3001,7 +2872,7 @@ class _NERtcEngineImpl extends NERtcEngine
   @override
   Future<int> enableSpatializerRoomEffects(bool enable) async {
     apiLogger.i('enableSpatializerRoomEffects#arg{enable:${enable}');
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       int reply = await wrapper('enableSpatializerRoomEffects',
           _platform.enableSpatializerRoomEffects(enable));
       return reply;
@@ -3016,7 +2887,7 @@ class _NERtcEngineImpl extends NERtcEngine
   Future<int> setSpatializerRoomProperty(
       NERtcSpatializerRoomProperty property) async {
     final info = property.toJson();
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       int reply = await wrapper('setSpatializerRoomProperty',
           _platform.setSpatializerRoomProperty(property));
       return reply;
@@ -3031,7 +2902,7 @@ class _NERtcEngineImpl extends NERtcEngine
   Future<int> setSpatializerRenderMode(
       NERtcSpatializerRenderMode renderMode) async {
     apiLogger.i('setSpatializerRenderMode#arg{renderMode:${renderMode}');
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       int reply = await wrapper('setSpatializerRenderMode',
           _platform.setSpatializerRenderMode(renderMode.index));
       return reply;
@@ -3046,7 +2917,7 @@ class _NERtcEngineImpl extends NERtcEngine
   Future<int> enableSpatializer(bool enable, bool applyToTeam) async {
     apiLogger
         .i('enableSpatializer#arg{enable:${enable},applyToTeam:$applyToTeam');
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       int reply = await wrapper('enableSpatializer',
           _platform.enableSpatializer(enable, applyToTeam));
       return reply;
@@ -3060,7 +2931,7 @@ class _NERtcEngineImpl extends NERtcEngine
   @override
   Future<int> initSpatializer() async {
     apiLogger.i('initSpatializer');
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       int reply = await wrapper('initSpatializer', _platform.initSpatializer());
       return reply;
     } else {
@@ -3074,7 +2945,7 @@ class _NERtcEngineImpl extends NERtcEngine
       NERtcLocalRecordingConfig config, String taskId) async {
     apiLogger
         .i('addLocalRecorderStreamForTask#arg{config:$config,taskId:$taskId}');
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       return 30004;
     } else {
       final info = config.toJson();
@@ -3088,7 +2959,7 @@ class _NERtcEngineImpl extends NERtcEngine
   @override
   Future<int> removeLocalRecorderStreamForTask(String taskId) async {
     apiLogger.i('removeLocalRecorderStreamForTask#arg{taskId:$taskId}');
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       return 30004;
     } else {
       int reply = Invoke_(
@@ -3107,7 +2978,7 @@ class _NERtcEngineImpl extends NERtcEngine
       String taskId) async {
     apiLogger.i(
         'addLocalRecorderStreamLayoutForTask#arg{config:$config,uid:$uid,streamType:$streamType,streamLayer:$streamLayer,taskId:$taskId}');
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       return 30004;
     } else {
       final info = config.toJson();
@@ -3128,7 +2999,7 @@ class _NERtcEngineImpl extends NERtcEngine
       int uid, int streamType, int streamLayer, String taskId) async {
     apiLogger.i(
         'removeLocalRecorderStreamLayoutForTask#arg{uid:$uid,streamType:$streamType,streamLayer:$streamLayer,taskId:$taskId}');
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       return 30004;
     } else {
       int reply = Invoke_(
@@ -3147,7 +3018,7 @@ class _NERtcEngineImpl extends NERtcEngine
       List<NERtcLocalRecordingStreamInfo> infos, String taskId) async {
     apiLogger.i(
         'updateLocalRecorderStreamLayoutForTask#arg{infos:$infos,taskId:$taskId}');
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       return 30004;
     } else {
       final infosJson = infos.map((e) => e.toJson()).toList();
@@ -3163,7 +3034,7 @@ class _NERtcEngineImpl extends NERtcEngine
       List<NERtcLocalRecordingStreamInfo> infos, String taskId) async {
     apiLogger.i(
         'replaceLocalRecorderStreamLayoutForTask#arg{infos:$infos,taskId:$taskId}');
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       return 30004;
     } else {
       final infosJson = infos.map((e) => e.toJson()).toList();
@@ -3179,7 +3050,7 @@ class _NERtcEngineImpl extends NERtcEngine
       List<NERtcVideoWatermarkConfig> watermarks, String taskId) async {
     apiLogger.i(
         'updateLocalRecorderWaterMarksForTask#arg{watermarks:$watermarks,taskId:$taskId}');
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       return 30004;
     } else {
       final watermarksJson = watermarks.map((e) => e.toJson()).toList();
@@ -3195,7 +3066,7 @@ class _NERtcEngineImpl extends NERtcEngine
       int streamLayer, String taskId, NERtcVideoFrame frame) async {
     apiLogger.i(
         'pushLocalRecorderVideoFrameForTask#arg{uid:$uid,streamType:$streamType,streamLayer:$streamLayer,taskId:$taskId,frame:$frame}');
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       return 30004;
     } else {
       Map<String, dynamic> params = {
@@ -3224,7 +3095,7 @@ class _NERtcEngineImpl extends NERtcEngine
       int uid, int streamType, int streamLayer, String taskId) async {
     apiLogger.i(
         'showLocalRecorderStreamDefaultCoverForTask#arg{showEnabled:$showEnabled,uid:$uid,streamType:$streamType,streamLayer:$streamLayer,taskId:$taskId}');
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       return 30004;
     } else {
       int reply = Invoke_(
@@ -3242,7 +3113,7 @@ class _NERtcEngineImpl extends NERtcEngine
   @override
   Future<int> stopLocalRecorderRemuxMp4(String taskId) async {
     apiLogger.i('stopLocalRecorderRemuxMp4#arg{taskId:$taskId}');
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       return 30004;
     } else {
       int reply = Invoke_(InvokeMethod.kNERtcEngineStopLocalRecorderRemuxMp4,
@@ -3256,7 +3127,7 @@ class _NERtcEngineImpl extends NERtcEngine
       String flvPath, String mp4Path, bool saveOri) async {
     apiLogger.i(
         'remuxFlvToMp4#arg{flvPath:$flvPath,mp4Path:$mp4Path,saveOri:$saveOri}');
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       return 30004;
     } else {
       int reply = Invoke_(InvokeMethod.kNERtcEngineRemuxFlvToMp4,
@@ -3268,7 +3139,7 @@ class _NERtcEngineImpl extends NERtcEngine
   @override
   Future<int> stopRemuxFlvToMp4() async {
     apiLogger.i('stopRemuxFlvToMp4');
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       return 30004;
     } else {
       int reply = Invoke_(InvokeMethod.kNERtcEngineStopRemuxFlvToMp4, {});
@@ -3279,7 +3150,7 @@ class _NERtcEngineImpl extends NERtcEngine
   @override
   Future<int> startPushStreaming(NERtcPushStreamingConfig config) async {
     apiLogger.i('startPushStreaming#arg{config:$config}');
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       int reply = await wrapper(
           'startPushStreaming', _platform.startPushStreaming(config));
       return reply;
@@ -3294,7 +3165,7 @@ class _NERtcEngineImpl extends NERtcEngine
   Future<int> startPlayStreaming(
       String streamId, NERtcPlayStreamingConfig config) async {
     apiLogger.i('startPlayStreaming#arg{streamId:$streamId,config:$config}');
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       int reply = await wrapper(
           'startPlayStreaming', _platform.startPlayStreaming(streamId, config));
       return reply;
@@ -3310,7 +3181,7 @@ class _NERtcEngineImpl extends NERtcEngine
   @override
   Future<int> startASRCaption(NERtcASRCaptionConfig config) async {
     apiLogger.i('startASRCaption#arg{config:$config}');
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       int reply =
           await wrapper('startASRCaption', _platform.startASRCaption(config));
       return reply;
@@ -3324,7 +3195,7 @@ class _NERtcEngineImpl extends NERtcEngine
   @override
   Future<int> setMultiPathOption(NERtcMultiPathOption option) async {
     apiLogger.i('setMultiPathOption#arg{option:$option}');
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       int reply = await wrapper(
           'setMultiPathOption', _platform.setMultiPathOption(option));
       return reply;
@@ -3337,7 +3208,7 @@ class _NERtcEngineImpl extends NERtcEngine
 
   @override
   Future<int> sendData(NERtcDataExternalFrame frame) async {
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       int reply = await _platform.sendData(frame);
       return reply;
     } else {
@@ -3348,7 +3219,7 @@ class _NERtcEngineImpl extends NERtcEngine
 
   @override
   Future<int> pushExternalAudioFrame(NERtcAudioExternalFrame frame) async {
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       int reply = await _platform.pushExternalAudioFrame(frame);
       return reply;
     } else {
@@ -3365,7 +3236,7 @@ class _NERtcEngineImpl extends NERtcEngine
 
   @override
   Future<int> pushExternalSubAudioFrame(NERtcAudioExternalFrame frame) async {
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       int reply = await _platform.pushExternalSubAudioFrame(frame);
       return reply;
     } else {

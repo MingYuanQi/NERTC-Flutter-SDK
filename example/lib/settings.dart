@@ -9,8 +9,10 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:nertc_core/nertc_core.dart';
 
 class Settings {
-  static final defaultFileUrl =
+  static const _legacyFileUrl =
       'http://music.163.com/song/media/outer/url?id=30431364.mp3';
+  static final defaultFileUrl =
+      'http://jdvodbbjc75zn.vod.126.net/jdvodbbjc75zn/7596994f848844e99a4d37b91d0c77da.mp3';
   static final Settings _instance = Settings._();
   SharedPreferences? _prefs;
 
@@ -143,8 +145,11 @@ class Settings {
       NERtcServerRecordMode.mixAndSingle.index;
   set serverRecordMode(int value) => _prefs?.setInt("serverRecordMode", value);
 
-  String get audioMixingFileUrl =>
-      _prefs?.getString('audioMixingFileUrl') ?? defaultFileUrl;
+  String get audioMixingFileUrl {
+    final value = _prefs?.getString('audioMixingFileUrl');
+    return value == null || value == _legacyFileUrl ? defaultFileUrl : value;
+  }
+
   set audioMixingFileUrl(String value) =>
       _prefs?.setString("audioMixingFileUrl", value);
 
@@ -213,16 +218,6 @@ class Settings {
       _prefs?.getBool('openTestEnvironment') ?? false;
   set openTestEnvironment(bool value) =>
       _prefs?.setBool('openTestEnvironment', value);
-
-  bool get enableAudioFrameCallback =>
-      _prefs?.getBool('enableAudioFrameCallback') ?? false;
-  set enableAudioFrameCallback(bool value) =>
-      _prefs?.setBool('enableAudioFrameCallback', value);
-
-  bool get saveAudioFramePcm =>
-      _prefs?.getBool('saveAudioFramePcm') ?? false;
-  set saveAudioFramePcm(bool value) =>
-      _prefs?.setBool('saveAudioFramePcm', value);
 }
 
 class SettingsPage extends StatefulWidget {
@@ -281,8 +276,6 @@ class _SettingsPageState extends State<SettingsPage> {
   bool _disableFirstJoinUserCreateChannel = false;
   bool _forceLandScapeMode = false;
   bool _test_uri_environment = false;
-  bool _enableAudioFrameCallback = false;
-  bool _saveAudioFramePcm = false;
 
   @override
   void initState() {
@@ -334,8 +327,6 @@ class _SettingsPageState extends State<SettingsPage> {
       _screenMinBitRate = settings.screenMinBitRate;
       //测试环境
       _test_uri_environment = settings.openTestEnvironment;
-      _enableAudioFrameCallback = settings.enableAudioFrameCallback;
-      _saveAudioFramePcm = settings.saveAudioFramePcm;
     });
   }
 
@@ -464,32 +455,6 @@ class _SettingsPageState extends State<SettingsPage> {
                 });
               },
               value: _test_uri_environment,
-            ),
-            Divider(
-                height: 1, color: Colors.grey, indent: 15.0, endIndent: 15.0),
-            SwitchListTile(
-              title: const Text('音频帧回调'),
-              subtitle: Text('默认关闭；开启后注册音频帧回调并打印日志'),
-              onChanged: (bool value) {
-                setState(() {
-                  _enableAudioFrameCallback = value;
-                  settings.enableAudioFrameCallback = value;
-                });
-              },
-              value: _enableAudioFrameCallback,
-            ),
-            Divider(
-                height: 1, color: Colors.grey, indent: 15.0, endIndent: 15.0),
-            SwitchListTile(
-              title: const Text('保存音频PCM'),
-              subtitle: Text('默认关闭；开启后不打印日志，改为保存pcm'),
-              onChanged: (bool value) {
-                setState(() {
-                  _saveAudioFramePcm = value;
-                  settings.saveAudioFramePcm = value;
-                });
-              },
-              value: _saveAudioFramePcm,
             )
           ],
         )

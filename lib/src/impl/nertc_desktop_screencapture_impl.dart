@@ -140,7 +140,7 @@ class _NERtcDesktopScreenCaptureImpl extends NERtcDesktopScreenCapture {
   @override
   IScreenCaptureList? getScreenCaptureSources(
       NERtcSize thumbSize, NERtcSize iconSize, bool includeScreen) {
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       print("Android and iOS not support.");
       return null;
     }
@@ -151,7 +151,7 @@ class _NERtcDesktopScreenCaptureImpl extends NERtcDesktopScreenCapture {
 
   @override
   int pauseScreenCapture() {
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       print("Android and iOS not support.");
       return 30004;
     }
@@ -178,7 +178,7 @@ class _NERtcDesktopScreenCaptureImpl extends NERtcDesktopScreenCapture {
   @override
   int setScreenCaptureSource(NERtcScreenCaptureSourceInfo source,
       NERtcRectangle regionRect, NERtcScreenCaptureParameters captureParams) {
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       print("Android and iOS not support.");
       return 30004;
     }
@@ -192,7 +192,7 @@ class _NERtcDesktopScreenCaptureImpl extends NERtcDesktopScreenCapture {
   @override
   int startScreenCaptureByDisplayId(int displayId, NERtcRectangle regionRect,
       NERtcScreenCaptureParameters captureParams) {
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       print("Android and iOS not support.");
       return 30004;
     }
@@ -207,7 +207,7 @@ class _NERtcDesktopScreenCaptureImpl extends NERtcDesktopScreenCapture {
   @override
   int startScreenCaptureByScreenRect(NERtcRectangle screenRect,
       NERtcRectangle regionRect, NERtcScreenCaptureParameters captureParams) {
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       print("Android and iOS not support.");
       return 30004;
     }
@@ -222,7 +222,7 @@ class _NERtcDesktopScreenCaptureImpl extends NERtcDesktopScreenCapture {
   @override
   int startScreenCaptureByWindowId(int windowId, NERtcRectangle regionRect,
       NERtcScreenCaptureParameters captureParams) {
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       print("Android and iOS not support.");
       return 30004;
     }
@@ -236,7 +236,7 @@ class _NERtcDesktopScreenCaptureImpl extends NERtcDesktopScreenCapture {
 
   @override
   int stopScreenCapture() {
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       print("Android and iOS not support.");
       return 30004;
     }
@@ -246,7 +246,7 @@ class _NERtcDesktopScreenCaptureImpl extends NERtcDesktopScreenCapture {
   @override
   int updateScreenCaptureParameters(
       NERtcScreenCaptureParameters captureParams) {
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       print("Android and iOS not support.");
       return 30004;
     }
@@ -257,7 +257,7 @@ class _NERtcDesktopScreenCaptureImpl extends NERtcDesktopScreenCapture {
 
   @override
   int updateScreenCaptureRegion(NERtcRectangle regionRect) {
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       print("Android and iOS not support.");
       return 30004;
     }

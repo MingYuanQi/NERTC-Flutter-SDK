@@ -1,0 +1,10 @@
+{
+  "module": {
+    "name": "nertc_core",
+    "type": "har",
+    "deviceTypes": [
+      "default",
+      "tablet"
+    ]
+  }
+}

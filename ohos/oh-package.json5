@@ -1,0 +1,11 @@
+{
+  "name": "nertc_core",
+  "version": "5.9.20",
+  "description": "HarmonyOS implementation of the NetEase RTC Flutter plugin.",
+  "main": "index.ets",
+  "author": "NetEase",
+  "license": "MIT",
+  "dependencies": {
+    "@nertc/nertc_sdk": "5.10.1"
+  }
+}

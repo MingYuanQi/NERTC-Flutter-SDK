@@ -66,10 +66,6 @@ export 'package:nertc_core_platform_interface/nertc_core_platform_interface.dart
         NERtcVideoViewFitType,
         NERtcVideoCropMode,
         NERtcVideoStreamType,
-        NERtcAudioFrame,
-        NERtcAudioFrameEventSink,
-        NERtcAudioFrameFormat,
-        NERtcAudioFrameRequestFormat,
         NERtcAudioVolumeInfo,
         NERtcAudioDumpType,
         NERtcAudioMixingError,
@@ -196,3 +192,6 @@ part 'src/impl/nertc_video_renderer_impl.dart';
 part 'src/impl/device_collection_impl.dart';
 part 'src/impl/nertc_desktop_screencapture_impl.dart';
 part 'src/ffi/nertc_ffi.dart';
+
+bool get _usesPlatformChannels =>
+    Platform.isAndroid || Platform.isIOS || Platform.isOhos;

@@ -59,6 +59,8 @@ class _NERtcVideoRendererImpl extends NERtcVideoRenderer with _SDKLoggerMixin {
   int _textureId = -1;
   bool _mirror = false;
   StreamSubscription<dynamic>? _rendererEventSubscription;
+  Completer<void>? _ohosViewLoaded;
+  MethodChannel? _ohosViewChannel;
 
   bool _local = false;
   int _uid = -1;
@@ -66,21 +68,34 @@ class _NERtcVideoRendererImpl extends NERtcVideoRenderer with _SDKLoggerMixin {
   bool _disposed = false;
 
   // bool get canRender => (_uid != -1 || _local);
-  bool get canRender =>
-      value.width * value.height != 0 && (_uid != -1 || _local);
+  bool get canRender => Platform.isOhos
+      ? (_uid != -1 || _local)
+      : value.width * value.height != 0 && (_uid != -1 || _local);
 
   int? get textureId => _textureId;
 
   Future<void> initialize() async {
     print("_NERtcVideoRendererImpl initialize, channelTag: ${channelTag}");
     if (channelTag == null) channelTag = "";
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       int reply = await _platform.createVideoRenderer();
       _textureId = reply;
-      _rendererEventSubscription =
-          EventChannel('NERtcFlutterRenderer/Texture$_textureId')
-              .receiveBroadcastStream()
-              .listen(_onRendererEvent);
+      if (Platform.isOhos) {
+        final viewLoaded = Completer<void>();
+        _ohosViewLoaded = viewLoaded;
+        _ohosViewChannel =
+            MethodChannel('nertc_core_ohos/video_view/$_textureId');
+        _ohosViewChannel!.setMethodCallHandler((call) async {
+          if (call.method == 'onLoad' && !viewLoaded.isCompleted) {
+            viewLoaded.complete();
+          }
+        });
+      } else {
+        _rendererEventSubscription =
+            EventChannel('NERtcFlutterRenderer/Texture$_textureId')
+                .receiveBroadcastStream()
+                .listen(_onRendererEvent);
+      }
     } else {
       _textureId = GenerateFlutterRender(_onRendererEvent, this.channelTag);
       print('GenerateFlutterRender return: $_textureId');
@@ -154,7 +169,7 @@ class _NERtcVideoRendererImpl extends NERtcVideoRenderer with _SDKLoggerMixin {
   @override
   Future<int> setMirror(bool mirror) async {
     if (textureId == null) return -1;
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       int reply = await _platform.setMirror(_textureId, mirror);
       if (reply == 0) _mirror = mirror;
       return reply;
@@ -173,7 +188,7 @@ class _NERtcVideoRendererImpl extends NERtcVideoRenderer with _SDKLoggerMixin {
   @override
   Future<int> setScalingMode(int scalingMode) async {
     if (textureId == null) return -1;
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       return 30004; //暂不支持
     } else {
       return SetFlutterRenderScalingMode(
@@ -186,7 +201,11 @@ class _NERtcVideoRendererImpl extends NERtcVideoRenderer with _SDKLoggerMixin {
   }
 
   Future<int> _setPlayingCanvasSource(String streamId, int textureId) async {
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (Platform.isOhos) {
+      await _ohosViewLoaded?.future;
+      if (_disposed) return -1;
+    }
+    if (_usesPlatformChannels) {
       int reply = await _platform.setupPlayStreamingCanvas(streamId, textureId);
       return reply;
     } else {
@@ -197,7 +216,11 @@ class _NERtcVideoRendererImpl extends NERtcVideoRenderer with _SDKLoggerMixin {
   Future<int> _setSource(
       bool local, bool subStream, int uid, int? textureId) async {
     if (textureId == null) return -1;
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (Platform.isOhos) {
+      await _ohosViewLoaded?.future;
+      if (_disposed) return -1;
+    }
+    if (_usesPlatformChannels) {
       if (local) {
         int reply = _subStream
             ? await _platform.setupLocalSubStreamVideoRenderer(textureId,
@@ -237,9 +260,15 @@ class _NERtcVideoRendererImpl extends NERtcVideoRenderer with _SDKLoggerMixin {
   Future<void> dispose() async {
     if (_disposed) return;
     _disposed = true;
+    if (Platform.isOhos && !(_ohosViewLoaded?.isCompleted ?? true)) {
+      _ohosViewLoaded!.complete();
+    }
     await _setSource(_local, _subStream, _uid, null);
     await _rendererEventSubscription?.cancel();
-    if (Platform.isAndroid || Platform.isIOS) {
+    _ohosViewChannel?.setMethodCallHandler(null);
+    _ohosViewChannel = null;
+    _ohosViewLoaded = null;
+    if (_usesPlatformChannels) {
       await _platform.disposeVideoRenderer(_textureId);
     } else {
       DisposeFlutterRender(_textureId);

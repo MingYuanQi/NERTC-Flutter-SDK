@@ -1,3 +1,6 @@
+## 5.9.40
+* New features:
+  - Harmony flutter sdk
 ## 5.9.30
 * New features:
   - Add Audio frame callback. 

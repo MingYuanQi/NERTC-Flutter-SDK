@@ -41,6 +41,8 @@ class _MainPageState extends State<MainPage> {
   static const audioSessionChannel = const MethodChannel(
       'com.netease.nertc_core.nertc_core_example.audio_session');
   static const permissionMacOsChannel = const MethodChannel('permission_macos');
+  static const permissionOhosChannel =
+      const MethodChannel('nertc_core_example/permissions');
 
   FocusNode _channelFocusNode = FocusNode();
   FocusNode _uidFocusNode = FocusNode();
@@ -49,6 +51,7 @@ class _MainPageState extends State<MainPage> {
   final _uidController = TextEditingController();
   bool _uidValidateError = false;
   bool isPlayingMusic = false;
+  bool _starting = false;
 
   @override
   void initState() {
@@ -156,15 +159,23 @@ class _MainPageState extends State<MainPage> {
                   minWidth: 200.0,
                   height: 55.0,
                   child: ElevatedButton(
-                      onPressed: () {
-                        _channelFocusNode.unfocus();
-                        _uidFocusNode.unfocus();
-                        _startRTC(context);
-                      },
-                      child: const Text(
-                        '开始会话',
-                        style: TextStyle(fontWeight: FontWeight.bold),
-                      )),
+                      onPressed: _starting
+                          ? null
+                          : () {
+                              _channelFocusNode.unfocus();
+                              _uidFocusNode.unfocus();
+                              _startRTC(context);
+                            },
+                      child: _starting
+                          ? const SizedBox(
+                              width: 24,
+                              height: 24,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : const Text(
+                              '开始会话',
+                              style: TextStyle(fontWeight: FontWeight.bold),
+                            )),
                 )
               ],
             ),
@@ -204,12 +215,53 @@ class _MainPageState extends State<MainPage> {
   }
 
   Future<void> _startRTC(BuildContext context) async {
-    _channelValidateError = _channelController.text.isEmpty;
-    _uidValidateError = _uidController.text.isEmpty;
+    final channelName = _channelController.text.trim();
+    final uid = int.tryParse(_uidController.text.trim());
+    _channelValidateError = channelName.isEmpty;
+    _uidValidateError = uid == null;
 
     setState(() {});
 
     if (_channelValidateError || _uidValidateError) return;
+
+    setState(() => _starting = true);
+
+    try {
+      final permissionsGranted = await _requestMediaPermissions(context);
+      if (!permissionsGranted) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('需要相机和麦克风权限才能开始会话')),
+          );
+        }
+        return;
+      }
+
+      if (!mounted) return;
+      await Navigator.push(
+          context,
+          MaterialPageRoute(
+              builder: (context) => CallPage(
+                    cid: channelName,
+                    uid: uid!,
+                  )));
+    } catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('启动会话失败: $error')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _starting = false);
+    }
+  }
+
+  Future<bool> _requestMediaPermissions(BuildContext context) async {
+    if (Platform.isOhos) {
+      return await permissionOhosChannel
+              .invokeMethod<bool>('requestMediaPermissions') ??
+          false;
+    }
 
     if (Platform.isMacOS) {
       bool ret =
@@ -224,6 +276,7 @@ class _MainPageState extends State<MainPage> {
         await permissionMacOsChannel
             .invokeMethod("requestMicrophonePermission");
       }
+      return true;
     } else {
       //检查权限
       final permissions = [Permission.camera, Permission.microphone];
@@ -290,18 +343,7 @@ class _MainPageState extends State<MainPage> {
           }
         }
       }
+      return allGranted;
     }
-
-    // if (!allGranted) {
-    //   // openAppSettings();
-    // } else {
-    Navigator.push(
-        context,
-        MaterialPageRoute(
-            builder: (context) => CallPage(
-                  cid: _channelController.text,
-                  uid: int.parse(_uidController.text),
-                )));
-    // }
   }
 }

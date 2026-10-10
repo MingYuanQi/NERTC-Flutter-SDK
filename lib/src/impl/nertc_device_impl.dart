@@ -30,7 +30,7 @@ class _NERtcDeviceManagerImpl extends NERtcDeviceManager
 
   @override
   Future<double> getCameraMaxZoom() async {
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       double reply =
           await wrapper('getCameraMaxZoom', _platform.getCameraMaxZoom());
       return reply;
@@ -41,7 +41,7 @@ class _NERtcDeviceManagerImpl extends NERtcDeviceManager
 
   @override
   Future<bool> isCameraExposurePositionSupported() async {
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       bool reply = await wrapper('isCameraExposurePositionSupported',
           _platform.isCameraExposurePositionSupported());
       return reply;
@@ -52,7 +52,7 @@ class _NERtcDeviceManagerImpl extends NERtcDeviceManager
 
   @override
   Future<bool> isCameraFocusSupported() async {
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       bool reply = await wrapper(
           'isCameraFocusSupported', _platform.isCameraFocusSupported());
       return reply;
@@ -63,7 +63,7 @@ class _NERtcDeviceManagerImpl extends NERtcDeviceManager
 
   @override
   Future<bool> isCameraTorchSupported() async {
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       bool reply = await wrapper(
           'isCameraTorchSupported', _platform.isCameraTorchSupported());
       return reply;
@@ -74,7 +74,7 @@ class _NERtcDeviceManagerImpl extends NERtcDeviceManager
 
   @override
   Future<bool> isCameraZoomSupported() async {
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       bool reply = await wrapper(
           'isCameraZoomSupported', _platform.isCameraZoomSupported());
       return reply;
@@ -85,7 +85,7 @@ class _NERtcDeviceManagerImpl extends NERtcDeviceManager
 
   @override
   Future<bool> isPlayoutDeviceMute() async {
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       bool reply =
           await wrapper('isPlayoutDeviceMute', _platform.isPlayoutDeviceMute());
       return reply;
@@ -100,7 +100,7 @@ class _NERtcDeviceManagerImpl extends NERtcDeviceManager
 
   @override
   Future<bool> isRecordDeviceMute() async {
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       bool reply =
           await wrapper('isRecordDeviceMute', _platform.isRecordDeviceMute());
       return reply;
@@ -116,7 +116,7 @@ class _NERtcDeviceManagerImpl extends NERtcDeviceManager
   @override
   Future<int> setCameraFocusPosition(double x, double y) async {
     apiLogger.i('setCameraFocusPosition#arg{x:$x,y:$y}');
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       int reply = await wrapper(
           'setCameraFocusPosition', _platform.setCameraFocusPosition(x, y));
       return reply;
@@ -128,7 +128,7 @@ class _NERtcDeviceManagerImpl extends NERtcDeviceManager
   @override
   Future<int> setCameraTorchOn(bool on) async {
     apiLogger.i('setCameraTorchOn#arg{on:$on}');
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       int reply =
           await wrapper('setCameraTorchOn', _platform.setCameraTorchOn(on));
       return reply;
@@ -140,7 +140,7 @@ class _NERtcDeviceManagerImpl extends NERtcDeviceManager
   @override
   Future<int> setCameraZoomFactor(double factor) async {
     apiLogger.i('setCameraTorchOn#arg{factor:$factor}');
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       int reply = await wrapper(
           'setCameraZoomFactor', _platform.setCameraZoomFactor(factor));
       return reply;
@@ -152,7 +152,7 @@ class _NERtcDeviceManagerImpl extends NERtcDeviceManager
   @override
   Future<int> setPlayoutDeviceMute(bool mute) async {
     apiLogger.i('setPlayoutDeviceMute#arg{mute:$mute}');
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       int reply = await wrapper(
           'setPlayoutDeviceMute', _platform.setPlayoutDeviceMute(mute));
       return reply;
@@ -169,7 +169,7 @@ class _NERtcDeviceManagerImpl extends NERtcDeviceManager
   @override
   Future<int> setRecordDeviceMute(bool mute) async {
     apiLogger.i('setRecordDeviceMute#arg{mute:$mute}');
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       int reply = await wrapper(
           'setRecordDeviceMute', _platform.setRecordDeviceMute(mute));
       return reply;
@@ -185,7 +185,7 @@ class _NERtcDeviceManagerImpl extends NERtcDeviceManager
 
   @override
   Future<int> switchCamera() async {
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       int reply = await wrapper('switchCamera', _platform.switchCamera());
       return reply;
     } else {
@@ -196,7 +196,7 @@ class _NERtcDeviceManagerImpl extends NERtcDeviceManager
   @override
   Future<int> enableEarback(bool enabled, int volume) async {
     apiLogger.i('enableEarback#arg{enabled:$enabled,volume:$volume}');
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       int reply = await wrapper(
           'enableEarback', _platform.enableEarback(enabled, volume));
       return reply;
@@ -213,7 +213,7 @@ class _NERtcDeviceManagerImpl extends NERtcDeviceManager
 
   @override
   Future<bool> isSpeakerphoneOn() async {
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       bool reply =
           await wrapper('isSpeakerphoneOn', _platform.isSpeakerphoneOn());
       return reply;
@@ -225,7 +225,7 @@ class _NERtcDeviceManagerImpl extends NERtcDeviceManager
   @override
   Future<int> setAudioFocusMode(int focusMode) async {
     apiLogger.i('setAudioFocusMode#arg{focusMode:$focusMode}');
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       int reply = await wrapper(
           'setAudioFocusMode', _platform.setAudioFocusMode(focusMode));
       return reply;
@@ -237,7 +237,7 @@ class _NERtcDeviceManagerImpl extends NERtcDeviceManager
   @override
   Future<int> setEarbackVolume(int volume) async {
     apiLogger.i('setEarbackVolume#arg{volume:$volume}');
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       int reply =
           await wrapper('setEarbackVolume', _platform.setEarbackVolume(volume));
       return reply;
@@ -254,7 +254,7 @@ class _NERtcDeviceManagerImpl extends NERtcDeviceManager
   @override
   Future<int> setSpeakerphoneOn(bool enable) async {
     apiLogger.i('setSpeakerphoneOn#arg{enable:$enable}');
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       int reply = await wrapper(
           'setSpeakerphoneOn', _platform.setSpeakerphoneOn(enable));
       return reply;
@@ -267,7 +267,7 @@ class _NERtcDeviceManagerImpl extends NERtcDeviceManager
 
   @override
   Future<int> getCameraCurrentZoom() async {
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       int reply = await wrapper(
           'getCameraCurrentZoom', _platform.getCameraCurrentZoom());
       return reply;
@@ -278,7 +278,7 @@ class _NERtcDeviceManagerImpl extends NERtcDeviceManager
 
   @override
   Future<int> getCurrentCamera() async {
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       int reply =
           await wrapper('getCurrentCamera', _platform.getCurrentCamera());
       return reply;
@@ -290,7 +290,7 @@ class _NERtcDeviceManagerImpl extends NERtcDeviceManager
   @override
   Future<int> switchCameraWithPosition(int position) async {
     apiLogger.i('switchCameraWithPosition#arg{position:$position}');
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       int reply = await wrapper('switchCameraWithPosition',
           _platform.switchCameraWithPosition(position));
       return reply;
@@ -302,7 +302,7 @@ class _NERtcDeviceManagerImpl extends NERtcDeviceManager
   @override
   Future<int> setCameraExposurePosition(double x, double y) async {
     apiLogger.i('setCameraExposurePosition#arg{x:$x,y:$y}');
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       int reply = await wrapper('setCameraExposurePosition',
           _platform.setCameraExposurePosition(x, y));
       return reply;
@@ -331,7 +331,7 @@ class _NERtcDeviceManagerImpl extends NERtcDeviceManager
   Future<int> setDevice(NERtcDeviceType type, String deviceId,
       {NERtcDeviceUsage usage = NERtcDeviceUsage.capture,
       int streamType = NERtcVideoStreamType.main}) async {
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       print("mobile is not support.");
       return 30004;
     }
@@ -352,7 +352,7 @@ class _NERtcDeviceManagerImpl extends NERtcDeviceManager
   @override
   Future<String> queryVideoDevice(int streamType,
       {NERtcDeviceUsage usage = NERtcDeviceUsage.capture}) async {
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       print("mobile is not support.");
       return "";
     }
@@ -375,7 +375,7 @@ class _NERtcDeviceManagerImpl extends NERtcDeviceManager
   @override
   Future<String> queryAudioDevice(int streamType,
       {NERtcDeviceUsage usage = NERtcDeviceUsage.capture}) async {
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       print("mobile is not support.");
       return "";
     }

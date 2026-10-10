@@ -4,8 +4,8 @@
 
 class Config {
   //your appkey
-  static const String APP_KEY = 'your AppKey';
-  static const String DEBUG_APP_KEY = 'your AppKey';
+  static const String APP_KEY = 'Your App Key';
+  static const String DEBUG_APP_KEY = 'Your Debug App Key';
 }
 
 class UrlStore {

@@ -10,7 +10,8 @@ class LogOptions {
 
   /// 当前是否支持日志输出
   static bool get isSupported =>
-      flutterLogEnabled && (Platform.isIOS || Platform.isAndroid);
+      flutterLogEnabled &&
+      (Platform.isIOS || Platform.isAndroid || Platform.isOhos);
 }
 
 class _LogService {
@@ -109,6 +110,9 @@ class _LogService {
       if (directory != null) {
         return '${directory.path}/$pathSegmentRtc/$pathSegmentLog';
       }
+    } else if (Platform.isOhos) {
+      final directory = await getApplicationDocumentsDirectory();
+      return '${directory.path}/$pathSegmentRtc/$pathSegmentLog';
     } else {
       print('ALogService unsupported platform: ${Platform.operatingSystem}');
     }

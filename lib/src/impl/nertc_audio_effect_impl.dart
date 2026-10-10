@@ -19,7 +19,7 @@ class _NERtcAudioEffectMgrImpl extends NERtcAudioEffectManager
 
   @override
   Future<int> pauseAllEffect() async {
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       int reply = await wrapper('pauseAllEffect', _platform.pauseAllEffect());
       return reply;
     } else {
@@ -30,7 +30,7 @@ class _NERtcAudioEffectMgrImpl extends NERtcAudioEffectManager
   @override
   Future<int> pauseEffect(int effectId) async {
     apiLogger.i('pauseEffect#arg{effectId:$effectId}');
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       int reply = await wrapper('pauseEffect', _platform.pauseEffect(effectId));
       return reply;
     } else {
@@ -42,7 +42,7 @@ class _NERtcAudioEffectMgrImpl extends NERtcAudioEffectManager
   @override
   Future<int> playEffect(int effectId, NERtcAudioEffectOptions options) async {
     apiLogger.i('playEffect#arg{effectId:$effectId,options:$options}');
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       int reply =
           await wrapper('playEffect', _platform.playEffect(effectId, options));
       return reply;
@@ -54,7 +54,7 @@ class _NERtcAudioEffectMgrImpl extends NERtcAudioEffectManager
 
   @override
   Future<int> resumeAllEffect() async {
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       int reply = await wrapper('resumeAllEffect', _platform.resumeAllEffect());
       return reply;
     } else {
@@ -64,7 +64,7 @@ class _NERtcAudioEffectMgrImpl extends NERtcAudioEffectManager
 
   @override
   Future<int> resumeEffect(int effectId) async {
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       int reply =
           await wrapper('resumeEffect', _platform.resumeEffect(effectId));
       return reply;
@@ -76,7 +76,7 @@ class _NERtcAudioEffectMgrImpl extends NERtcAudioEffectManager
 
   @override
   Future<int> stopAllEffects() async {
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       int reply = await wrapper('stopAllEffects', _platform.stopAllEffects());
       return reply;
     } else {
@@ -86,7 +86,7 @@ class _NERtcAudioEffectMgrImpl extends NERtcAudioEffectManager
 
   @override
   Future<int> stopEffect(int effectId) async {
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       int reply = await wrapper('stopEffect', _platform.stopEffect(effectId));
       return reply;
     } else {
@@ -97,7 +97,7 @@ class _NERtcAudioEffectMgrImpl extends NERtcAudioEffectManager
 
   @override
   Future<int> getEffectCurrentPosition(int effectId) async {
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       int reply = await wrapper('getEffectCurrentPosition',
           _platform.getEffectCurrentPosition(effectId));
       return reply;
@@ -109,7 +109,7 @@ class _NERtcAudioEffectMgrImpl extends NERtcAudioEffectManager
 
   @override
   Future<int> getEffectDuration(int effectId) async {
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       int reply = await wrapper(
           'getEffectDuration', _platform.getEffectDuration(effectId));
       return reply;
@@ -121,7 +121,7 @@ class _NERtcAudioEffectMgrImpl extends NERtcAudioEffectManager
 
   @override
   Future<int> getEffectPitch(int effectId) async {
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       int reply =
           await wrapper('getEffectPitch', _platform.getEffectPitch(effectId));
       return reply;
@@ -133,7 +133,7 @@ class _NERtcAudioEffectMgrImpl extends NERtcAudioEffectManager
 
   @override
   Future<int> getEffectPlaybackVolume(int effectId) async {
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       int reply = await wrapper('getEffectPlaybackVolume',
           _platform.getEffectPlaybackVolume(effectId));
       return reply;
@@ -145,7 +145,7 @@ class _NERtcAudioEffectMgrImpl extends NERtcAudioEffectManager
 
   @override
   Future<int> getEffectSendVolume(int effectId) async {
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       int reply = await wrapper(
           'getEffectSendVolume', _platform.getEffectSendVolume(effectId));
       return reply;
@@ -157,7 +157,7 @@ class _NERtcAudioEffectMgrImpl extends NERtcAudioEffectManager
 
   @override
   Future<int> setEffectPitch(int effectId, int pitch) async {
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       int reply = await wrapper(
           'setEffectPitch', _platform.setEffectPitch(effectId, pitch));
       return reply;
@@ -169,7 +169,7 @@ class _NERtcAudioEffectMgrImpl extends NERtcAudioEffectManager
 
   @override
   Future<int> setEffectPlaybackVolume(int effectId, int volume) async {
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       int reply = await wrapper('setEffectPlaybackVolume',
           _platform.setEffectPlaybackVolume(effectId, volume));
       return reply;
@@ -181,7 +181,7 @@ class _NERtcAudioEffectMgrImpl extends NERtcAudioEffectManager
 
   @override
   Future<int> setEffectPosition(int effectId, int position) async {
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       int reply = await wrapper(
           'setEffectPosition', _platform.setEffectPosition(effectId, position));
       return reply;
@@ -193,7 +193,7 @@ class _NERtcAudioEffectMgrImpl extends NERtcAudioEffectManager
 
   @override
   Future<int> setEffectSendVolume(int effectId, int volume) async {
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_usesPlatformChannels) {
       int reply = await wrapper('setEffectSendVolume',
           _platform.setEffectSendVolume(effectId, volume));
       return reply;

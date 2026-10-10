@@ -1,0 +1,24 @@
+{
+  "string": [
+    {
+      "name": "module_desc",
+      "value": "module description"
+    },
+    {
+      "name": "EntryAbility_desc",
+      "value": "description"
+    },
+    {
+      "name": "EntryAbility_label",
+      "value": "nertc_core_ohos_example"
+    },
+    {
+      "name": "why_need_microphone_desc",
+      "value": "Microphone access is required for calls"
+    },
+    {
+      "name": "why_need_camera_desc",
+      "value": "Camera access is required for video calls"
+    }
+  ]
+}
